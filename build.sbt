@@ -12,17 +12,18 @@ licenses += ("MIT", url("http://opensource.org/licenses/mit-license.php"))
 
 // Produce a sequence of ClassInfo
 lazy val infoTask = TaskKey[Seq[ClassInfo]]("info-task")
-infoTask <<= (scalaJSIR in Compile) map (_.data map (_.info))
+infoTask := (scalaJSIR in Compile).value.data map (_.info)
 
 // Creates the analysis and get the Map
 lazy val analysisTask = TaskKey[scala.collection.Map[String, Analysis.ClassInfo]]("analysis-task")
-analysisTask <<= infoTask map { (s :Seq[ClassInfo]) =>
-	  Analyzer.computeReachability(
-	  	Semantics.Defaults, 
-	  	SymbolRequirement.factory("test").none(), 
-	  	s, false).classInfos
+analysisTask := {
+  val sq = infoTask.value
+  Analyzer.computeReachability(
+    Semantics.Defaults, 
+    SymbolRequirement.factory("test").none(), 
+    sq, false).classInfos
 }
 
 // Prints the Seq[ClassInfo]
 lazy val printTask = TaskKey[Unit]("print-task")
-printTask <<= analysisTask map println
+printTask := println(analysisTask.value)
