@@ -7,7 +7,7 @@ val commonSettings: Seq[Setting[_]] = Seq(
 
   scalacOptions ++= Seq(
       "-deprecation", "-feature", "-Xfatal-warnings",
-      "-encoding", "utf-8", "-feature"),
+      "-encoding", "utf-8"),
 
   homepage := Some(url("https://github.com/lionelfleury/scala-js-call-graph")),
   licenses += ("MIT", url("http://opensource.org/licenses/mit-license.php")),
@@ -18,17 +18,18 @@ val commonSettings: Seq[Setting[_]] = Seq(
       Some("scm:git@github.com:lionelfleury/scala-js-call-graph.git")))
 )
 
-libraryDependencies ++= Seq("com.lihaoyi" %% "upickle" % "0.3.8",
-  "org.scala-js" %% "scalajs-tools" % scalaJSVersion,
-  "org.scala-js" % "sbt-scalajs" % scalaJSVersion)
+ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
+
+libraryDependencies ++= Seq(
+  "com.lihaoyi" %% "upickle" % "0.3.8",
+  "org.scala-js" %% "scalajs-tools" % scalaJSVersion)
 
 lazy val `sbt-scalajs-callgraph` = project.in(file("sbt-scalajs-callgraph")).
   settings(commonSettings: _*).
   settings(
     sbtPlugin := true,
     libraryDependencies ++= Seq(
-      "org.scala-js" %% "scalajs-tools" % scalaJSVersion,
-      "org.scalajs" %% "sbt-scalajs" % scalaJSVersion
+      "org.scala-js" %% "scalajs-tools" % scalaJSVersion
     )
   ).dependsOn(utilsJVM)
 
@@ -41,7 +42,6 @@ lazy val utilsJVM = `sbt-scalajs-callgraph-utils`.jvm
 
 lazy val `scalajs-callgraph` = project.in(file(".")).
   enablePlugins(ScalaJSPlugin).
-  enablePlugins(ScalaJSJUnitPlugin).
   settings(commonSettings: _*).
   settings(
     scalaVersion := "2.11.7"
