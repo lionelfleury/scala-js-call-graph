@@ -21,7 +21,7 @@ val commonSettings: Seq[Setting[_]] = Seq(
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 
 libraryDependencies ++= Seq(
-  "com.lihaoyi" %% "upickle" % "0.3.8",
+  "com.lihaoyi" %%% "upickle" % "0.3.8",
   "org.scala-js" %% "scalajs-tools" % scalaJSVersion)
 
 lazy val `sbt-scalajs-callgraph` = project.in(file("sbt-scalajs-callgraph")).
@@ -44,5 +44,14 @@ lazy val `scalajs-callgraph` = project.in(file(".")).
   enablePlugins(ScalaJSPlugin).
   settings(commonSettings: _*).
   settings(
-    scalaVersion := "2.11.7"
+    libraryDependencies += "org.singlespaced" %%% "scalajs-d3" % "0.3.0",
+    scalaVersion := "2.11.7",
+    jsDependencies ++= Seq(
+      "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
+      RuntimeDOM
+    ),
+    scalaJSStage in Global := FastOptStage,
+    scalaJSUseRhino in Global := false,
+    persistLauncher in Compile := true,
+    persistLauncher in Test := false
   )

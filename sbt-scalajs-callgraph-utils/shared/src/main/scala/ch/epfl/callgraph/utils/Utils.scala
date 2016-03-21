@@ -25,7 +25,8 @@ object Utils {
                        ) extends Node
 
 
-  /*implicit def toJsBool(b: Boolean): Js.Value = {
+  /*
+  implicit def toJsBool(b: Boolean): Js.Value = {
     b match {
       case true => Js.True
       case false => Js.False
