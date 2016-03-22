@@ -1,6 +1,6 @@
 *.class
 *.log
-*.json
+**/*.json
 
 # idea
 .idea/

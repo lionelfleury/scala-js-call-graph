@@ -1,6 +1,10 @@
-unmanagedSourceDirectories in Compile ++= Seq(
-  baseDirectory.value.getParentFile / "sbt-scalajs-callgraph/src/main/scala",
-  baseDirectory.value.getParentFile / "sbt-scalajs-callgraph-utils/shared/src/main/scala")
+unmanagedSourceDirectories in Compile ++= {
+  val root = baseDirectory.value.getParentFile
+  Seq(
+    root / "sbt-scalajs-callgraph/src/main/scala",
+    root / "sbt-scalajs-callgraph-utils/shared/src/main/scala"
+  )
+}
 
 libraryDependencies += "com.lihaoyi" %% "upickle" % "0.3.8"
 
