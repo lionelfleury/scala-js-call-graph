@@ -33,6 +33,4 @@ object CallGraphPlugin extends AutoPlugin {
       }
     )
   }
-
-
 }

@@ -1,5 +1,10 @@
 package ch.epfl.callgraph.utils
 
+import upickle.Js
+import upickle.default._
+
+import scala.language.implicitConversions
+
 object Utils {
 
   sealed trait Node {
@@ -25,7 +30,6 @@ object Utils {
                        ) extends Node
 
 
-  /*
   implicit def toJsBool(b: Boolean): Js.Value = {
     b match {
       case true => Js.True
@@ -95,5 +99,5 @@ object Utils {
         node.in ++= in.value.map(_.toString)
         node
     }
-  }*/
+  }
 }

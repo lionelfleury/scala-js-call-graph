@@ -5,6 +5,8 @@ import java.io.{FileWriter, BufferedWriter, File}
 import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
 import org.scalajs.core.tools.linker.analyzer.Analysis
 import org.scalajs.core.tools.linker.analyzer.Analysis.{FromMethod, ClassInfo}
+import upickle.Js
+import upickle.default._
 
 import scala.language.implicitConversions
 
@@ -86,7 +88,7 @@ class Graph(graph: Map[String, Analysis.ClassInfo]) {
   val t = newGraph.map(x => x._2)
   val file = new File("graph.json")
   val bw = new BufferedWriter(new FileWriter(file))
-  /*bw.write(write(t))*/
+  bw.write(write(t))
   bw.close()
 
 }
