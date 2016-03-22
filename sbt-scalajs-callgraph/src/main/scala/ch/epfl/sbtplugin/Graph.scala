@@ -6,6 +6,8 @@ import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
 import org.scalajs.core.tools.linker.analyzer.Analysis
 import org.scalajs.core.tools.linker.analyzer.Analysis.{FromMethod, ClassInfo}
 
+import scala.language.implicitConversions
+
 class Graph(graph: Map[String, Analysis.ClassInfo]) {
 
   implicit def toClassNode(classInfo: Analysis.ClassInfo): ClassNode = {
