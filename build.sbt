@@ -1,6 +1,9 @@
+crossScalaVersions := Seq("2.10.5", "2.11.7", "2.12.0-M3")
+
+ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
+
 val commonSettings: Seq[Setting[_]] = Seq(
   organization := "ch.epfl",
-  name := "Scala.js CallGraph",
   version := "0.1.0-SNAPSHOT",
   scalacOptions ++= Seq(
       "-deprecation", "-feature", "-Xfatal-warnings",
@@ -11,8 +14,15 @@ val commonSettings: Seq[Setting[_]] = Seq(
       url("https://github.com/lionelfleury/scala-js-call-graph"),
       "scm:git:git@github.com:lionelfleury/scala-js-call-graph",
       Some("scm:git@github.com:lionelfleury/scala-js-call-graph.git"))),
-  ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
+  publishMavenStyle := true
 )
+
+lazy val utils = (crossProject in file("sbt-scalajs-callgraph-utils")).
+  settings(commonSettings: _*).
+  settings(libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8")
+
+lazy val utilsJS = utils.js
+lazy val utilsJVM = utils.jvm
 
 lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
   settings(commonSettings: _*).
@@ -22,19 +32,12 @@ lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
     libraryDependencies += "org.scala-js" %% "scalajs-tools" % scalaJSVersion
   ).dependsOn(utilsJVM)
 
-lazy val `sbt-scalajs-callgraph-utils` = (crossProject in file("sbt-scalajs-callgraph-utils")).
-  settings(commonSettings: _*).
-  settings(libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8")
-
-lazy val utilsJS = `sbt-scalajs-callgraph-utils`.js
-lazy val utilsJVM = `sbt-scalajs-callgraph-utils`.jvm
-
-lazy val `scalajs-callgraph` = (project in file(".")).
+lazy val root = (project in file(".")).
   enablePlugins(ScalaJSPlugin).
   enablePlugins(CallGraphPlugin).
   settings(commonSettings: _*).
   settings(
-    scalaVersion := "2.11.8",
+    scalaVersion := "2.11.7",
     libraryDependencies += "org.singlespaced" %%% "scalajs-d3" % "0.3.1",
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
@@ -43,5 +46,7 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     scalaJSStage in Global := FastOptStage,
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,
-    persistLauncher in Test := false
-  ).aggregate(utilsJS, `sbt-scalajs-callgraph`)
+    persistLauncher in Test := false,
+    publish := {},
+    publishLocal := {}
+  ).aggregate(utilsJVM, utilsJS, `sbt-scalajs-callgraph`)
