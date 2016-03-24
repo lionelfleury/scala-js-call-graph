@@ -3,6 +3,7 @@ package ch.epfl.sbtplugin
 import org.scalajs.core.tools.linker.analyzer.Analyzer
 import org.scalajs.core.tools.linker.backend.{BasicLinkerBackend, LinkerBackend, OutputMode}
 import org.scalajs.sbtplugin.ScalaJSPlugin
+import sbt.Keys._
 import sbt._
 
 object CallGraphPlugin extends AutoPlugin {
@@ -22,20 +23,22 @@ object CallGraphPlugin extends AutoPlugin {
     Seq(
       callgraph := {
         val semantics = scalaJSSemantics.value
+        val withSourceMap = true
         val config = LinkerBackend.Config()
         val linkerBackEnd =
-          new BasicLinkerBackend(semantics, OutputMode.Default, true, config)
-        val symbolRequirement = linkerBackEnd.symbolRequirements
+          new BasicLinkerBackend(semantics, OutputMode.Default, withSourceMap, config)
+        val symbolRequirements = linkerBackEnd.symbolRequirements
         val allowAddingSyntheticMethods = false
-        val infos = (scalaJSIR in Compile).value.data map (_.info)
+        val classInfos = (scalaJSIR in Compile).value.data map (_.info)
         val mapInfos = Analyzer.computeReachability(
           semantics,
-          symbolRequirement,
-          infos,
+          symbolRequirements,
+          classInfos,
           allowAddingSyntheticMethods
-        ).classInfos.toMap
+        ).classInfos
 
-        new Graph(mapInfos)
+        val graph = Graph.createFrom(mapInfos.values.toSeq)
+        Graph.writeToFile(graph, crossTarget.value / "graph.json")
       }
     )
   }

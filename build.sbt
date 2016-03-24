@@ -1,4 +1,4 @@
-crossScalaVersions := Seq("2.10.5", "2.11.7", "2.12.0-M3")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0-M3")
 
 ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
 
@@ -38,7 +38,7 @@ lazy val root = (project in file(".")).
   enablePlugins(CallGraphPlugin).
   settings(commonSettings: _*).
   settings(
-    scalaVersion := "2.11.7",
+    scalaVersion := "2.11.8",
     libraryDependencies += "org.singlespaced" %%% "scalajs-d3" % "0.3.1",
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
