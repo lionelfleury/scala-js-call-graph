@@ -1,5 +1,9 @@
 *.class
 *.log
+*.json
+
+# idea
+.idea/
 
 # sbt specific
 .cache
