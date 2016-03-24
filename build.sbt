@@ -17,12 +17,13 @@ val commonSettings: Seq[Setting[_]] = Seq(
   publishMavenStyle := true
 )
 
-lazy val utils = (crossProject in file("sbt-scalajs-callgraph-utils")).
-  settings(commonSettings: _*).
-  settings(libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8")
+lazy val `sbt-scalajs-callgraph-utils` =
+  (crossProject in file("sbt-scalajs-callgraph-utils")).
+    settings(commonSettings: _*).
+    settings(libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8")
 
-lazy val utilsJS = utils.js
-lazy val utilsJVM = utils.jvm
+lazy val utilsJS = `sbt-scalajs-callgraph-utils`.js
+lazy val utilsJVM = `sbt-scalajs-callgraph-utils`.jvm
 
 lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
   settings(commonSettings: _*).

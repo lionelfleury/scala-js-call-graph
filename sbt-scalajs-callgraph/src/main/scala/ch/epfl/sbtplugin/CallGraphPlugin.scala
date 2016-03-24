@@ -4,7 +4,7 @@ import org.scalajs.core.ir.Infos
 import org.scalajs.core.ir.Infos.ClassInfo
 import org.scalajs.core.tools.linker.analyzer.{Analysis, Analyzer, SymbolRequirement}
 import org.scalajs.core.tools.sem.Semantics
-import ch.epfl.callgraph.utils.Utils._
+import ch.epfl.callgraph.utils._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import ScalaJSPlugin.autoImport._
 import sbt._
