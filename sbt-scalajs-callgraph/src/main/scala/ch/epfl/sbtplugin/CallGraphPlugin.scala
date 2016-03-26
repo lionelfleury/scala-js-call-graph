@@ -6,6 +6,8 @@ import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys._
 import sbt._
 
+import scala.util.{Failure, Success}
+
 object CallGraphPlugin extends AutoPlugin {
 
   override def trigger = allRequirements
@@ -37,8 +39,13 @@ object CallGraphPlugin extends AutoPlugin {
           allowAddingSyntheticMethods
         ).classInfos
 
+        val log = streams.value.log
         val graph = Graph.createFrom(mapInfos.values.toSeq)
-        Graph.writeToFile(graph, crossTarget.value / "graph.json")
+        val file = crossTarget.value / "graph.json"
+        Graph.writeToFile(graph, file) match {
+          case Success(_) => log.info(s"callgraph created in $file")
+          case Failure(e) => sbt.toError(Some(e.getMessage))
+        }
       }
     )
   }

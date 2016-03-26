@@ -6,6 +6,7 @@ import ch.epfl.callgraph.utils.Utils._
 import org.scalajs.core.tools.linker.analyzer.Analysis._
 
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 object Graph {
 
@@ -59,11 +60,13 @@ object Graph {
     graph.values.toSeq
   }
 
-  def writeToFile(graph: Seq[Node], file: File): Unit = {
-    val bw = new BufferedWriter(new FileWriter(file))
+  def writeToFile(graph: Seq[Node], file: File): Try[Unit] = {
     val json = upickle.default.write(graph)
-    bw.write(json)
-    bw.flush()
-    bw.close()
+    Try {
+      val bw = new BufferedWriter(new FileWriter(file))
+      bw.write(json)
+      bw.flush()
+      bw.close()
+    }
   }
 }
