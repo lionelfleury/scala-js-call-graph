@@ -19,8 +19,6 @@ object CallGraphPlugin extends AutoPlugin {
 
   object autoImport {
     val callgraph = TaskKey[Unit]("callgraph", "Export callgraph to json")
-    val scalaJSLinker = SettingKey[ClearableLinker]("scalaJSLinker",
-      "Scala.js internal: Setting to persist a linker", KeyRanks.Invisible)
   }
 
   import ScalaJSPlugin.autoImport._
@@ -32,7 +30,28 @@ object CallGraphPlugin extends AutoPlugin {
         val log = streams.value.log
 
         val ir = (scalaJSIR in Compile).value.data
-        val linker = (scalaJSLinker in Compile).value
+        val linker = {
+          val opts = (scalaJSOptimizerOptions in Compile).value
+          val semantics = (scalaJSSemantics in Compile).value
+          val outputMode = (scalaJSOutputMode in Compile).value
+          val withSourceMap = (emitSourceMaps in Compile).value
+
+          val frontendConfig = LinkerFrontend.Config()
+            .withCheckIR(opts.checkScalaJSIR)
+
+          val backendConfig = LinkerBackend.Config()
+            .withCustomOutputWrapper(scalaJSOutputWrapper.value)
+            .withPrettyPrint(opts.prettyPrintFullOptJS)
+
+          val newLinker = { () =>
+            Linker(semantics, outputMode, withSourceMap, opts.disableOptimizer,
+              opts.parallel, opts.useClosureCompiler, frontendConfig,
+              backendConfig)
+          }
+
+          new ClearableLinker(newLinker, opts.batchMode)
+        }
+        // TODO : check for correct environment
         val env = (resolvedJSEnv in Compile).value.asInstanceOf[LinkingUnitJSEnv]
         val unit = linker.linkUnit(ir, env.symbolRequirements, log)
         val mapInfos = unit.infos
@@ -43,27 +62,6 @@ object CallGraphPlugin extends AutoPlugin {
           case Success(_) => log.info(s"callgraph created in $file")
           case Failure(e) => sbt.toError(Some(e.getMessage))
         }
-      },
-      scalaJSLinker := {
-        val opts = (scalaJSOptimizerOptions in Compile).value
-        val semantics = (scalaJSSemantics in Compile).value
-        val outputMode = (scalaJSOutputMode in Compile).value
-        val withSourceMap = (emitSourceMaps in Compile).value
-
-        val frontendConfig = LinkerFrontend.Config()
-          .withCheckIR(opts.checkScalaJSIR)
-
-        val backendConfig = LinkerBackend.Config()
-          .withCustomOutputWrapper(scalaJSOutputWrapper.value)
-          .withPrettyPrint(opts.prettyPrintFullOptJS)
-
-        val newLinker = { () =>
-          Linker(semantics, outputMode, withSourceMap, opts.disableOptimizer,
-            opts.parallel, opts.useClosureCompiler, frontendConfig,
-            backendConfig)
-        }
-
-        new ClearableLinker(newLinker, opts.batchMode)
       }
     )
   }
