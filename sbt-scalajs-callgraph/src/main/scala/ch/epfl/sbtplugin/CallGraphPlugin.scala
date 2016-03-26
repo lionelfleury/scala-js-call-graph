@@ -1,7 +1,10 @@
 package ch.epfl.sbtplugin
 
-import org.scalajs.core.tools.linker.analyzer.Analyzer
-import org.scalajs.core.tools.linker.backend.{BasicLinkerBackend, LinkerBackend, OutputMode}
+import org.scalajs.core.tools.linker._
+import org.scalajs.core.tools.linker.backend._
+import org.scalajs.core.tools.linker.frontend._
+import org.scalajs.jsenv._
+import org.scalajs.sbtplugin.Implicits._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys._
 import sbt._
@@ -15,7 +18,9 @@ object CallGraphPlugin extends AutoPlugin {
   override def requires = ScalaJSPlugin
 
   object autoImport {
-    lazy val callgraph = TaskKey[Unit]("callgraph", "Export callgraph to json")
+    val callgraph = TaskKey[Unit]("callgraph", "Export callgraph to json")
+    val scalaJSLinker = SettingKey[ClearableLinker]("scalaJSLinker",
+      "Scala.js internal: Setting to persist a linker", KeyRanks.Invisible)
   }
 
   import ScalaJSPlugin.autoImport._
@@ -24,28 +29,41 @@ object CallGraphPlugin extends AutoPlugin {
   override lazy val projectSettings: Seq[Setting[_]] = {
     Seq(
       callgraph := {
-        val semantics = scalaJSSemantics.value
-        val withSourceMap = true
-        val config = LinkerBackend.Config()
-        val linkerBackEnd =
-          new BasicLinkerBackend(semantics, OutputMode.Default, withSourceMap, config)
-        val symbolRequirements = linkerBackEnd.symbolRequirements
-        val allowAddingSyntheticMethods = false
-        val classInfos = (scalaJSIR in Compile).value.data map (_.info)
-        val mapInfos = Analyzer.computeReachability(
-          semantics,
-          symbolRequirements,
-          classInfos,
-          allowAddingSyntheticMethods
-        ).classInfos
-
         val log = streams.value.log
+
+        val ir = (scalaJSIR in Compile).value.data
+        val linker = (scalaJSLinker in Compile).value
+        val env = (resolvedJSEnv in Compile).value.asInstanceOf[LinkingUnitJSEnv]
+        val unit = linker.linkUnit(ir, env.symbolRequirements, log)
+        val mapInfos = unit.infos
+
         val graph = Graph.createFrom(mapInfos.values.toSeq)
         val file = crossTarget.value / "graph.json"
         Graph.writeToFile(graph, file) match {
           case Success(_) => log.info(s"callgraph created in $file")
           case Failure(e) => sbt.toError(Some(e.getMessage))
         }
+      },
+      scalaJSLinker := {
+        val opts = (scalaJSOptimizerOptions in Compile).value
+        val semantics = (scalaJSSemantics in Compile).value
+        val outputMode = (scalaJSOutputMode in Compile).value
+        val withSourceMap = (emitSourceMaps in Compile).value
+
+        val frontendConfig = LinkerFrontend.Config()
+          .withCheckIR(opts.checkScalaJSIR)
+
+        val backendConfig = LinkerBackend.Config()
+          .withCustomOutputWrapper(scalaJSOutputWrapper.value)
+          .withPrettyPrint(opts.prettyPrintFullOptJS)
+
+        val newLinker = { () =>
+          Linker(semantics, outputMode, withSourceMap, opts.disableOptimizer,
+            opts.parallel, opts.useClosureCompiler, frontendConfig,
+            backendConfig)
+        }
+
+        new ClearableLinker(newLinker, opts.batchMode)
       }
     )
   }

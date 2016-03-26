@@ -3,29 +3,28 @@ package ch.epfl.sbtplugin
 import java.io.{BufferedWriter, File, FileWriter}
 
 import ch.epfl.callgraph.utils.Utils._
-import org.scalajs.core.tools.linker.analyzer.Analysis._
+import org.scalajs.core.ir.Infos._
 
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 object Graph {
 
+  // TODO : replace those with the new ir.Infos classes
   private[this] def toClassNode(classInfo: ClassInfo): ClassNode = {
-    val methodInfos =
-      (classInfo.methodInfos ++ classInfo.staticMethodInfos) mapValues (_.encodedName)
     new ClassNode(
       classInfo.encodedName,
-      classInfo.displayName,
-      classInfo.nonExistent,
-      methodInfos.values.toSet)
+      classInfo.encodedName,
+      classInfo.isExported,
+      classInfo.methods.map(_.encodedName).toSet)
   }
 
   private[this] def toMethodNode(methodInfo: MethodInfo): MethodNode = {
     new MethodNode(
       methodInfo.encodedName,
-      methodInfo.displayName,
-      methodInfo.nonExistent,
-      methodInfo.owner.encodedName,
+      methodInfo.encodedName,
+      methodInfo.isExported,
+      "TODO",
       methodInfo.isStatic)
   }
 
@@ -36,25 +35,14 @@ object Graph {
 
     classInfos foreach { classInfo: ClassInfo =>
       val classNode = toClassNode(classInfo)
-      addToGraph(classNode)
+      if (classInfo.isExported)
+        addToGraph(classNode)
 
-      val methodInfos =
-        (classInfo.methodInfos ++ classInfo.staticMethodInfos).values
+      val methodInfos = classInfo.methods
 
       methodInfos foreach { methodInfo: MethodInfo =>
         val methodNode = toMethodNode(methodInfo)
         addToGraph(methodNode)
-      }
-
-      /* Inverse the existing edges */
-      classInfo.instantiatedFrom foreach {
-        case from: FromMethod => {
-          val method = from.methodInfo
-          val methodNode = addToGraph(toMethodNode(method))
-          /* Add a link from the method to the class */
-          methodNode.out += classInfo.encodedName
-        }
-        case _ => /* Not implemented yet */
       }
     }
     graph.values.toSeq

@@ -7,6 +7,7 @@ import scala.language.implicitConversions
 
 object Utils {
 
+  // TODO : refactor those with the new ir.Infos classes
   sealed trait Node {
     val encodedName: String
     val displayName: String
