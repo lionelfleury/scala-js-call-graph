@@ -58,10 +58,8 @@ object CallGraphPlugin extends AutoPlugin {
 
         val graph = Graph.createFrom(mapInfos.values.toSeq)
         val file = crossTarget.value / "graph.json"
-        Graph.writeToFile(graph, file) match {
-          case Success(_) => log.info(s"callgraph created in $file")
-          case Failure(e) => sbt.toError(Some(e.getMessage))
-        }
+        Graph.writeToFile(graph, file)
+        log.info(s"callgraph created in $file")
       }
     )
   }

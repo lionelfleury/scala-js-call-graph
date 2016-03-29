@@ -1,27 +1,49 @@
 package ch.epfl.callgraph.visualization
 
-import org.scalajs.dom
-import scala.scalajs.js
+import ch.epfl.callgraph.utils._
+import org.scalajs.dom._
+import org.scalajs.dom.raw.FileReader
+import upickle.default._
+import scala.collection._
+import scala.scalajs.js.Dynamic.{global => g}
 import scala.scalajs.js.JSApp
-import js.Dynamic.{ global => g }
-import org.singlespaced.d3js.d3
-import org.singlespaced.d3js.Ops._
+import scalatags.JsDom.all._
 
 object Visualization extends JSApp {
+  var graph = Seq[Utils.Node]()
 
-  def main() : Unit = {
-    //loadGraph()
-    g.alert("Hello World")
+  val box = input(`type` := "text", placeholder := "Type here !").render
+  val output = div().render
+
+  box.onkeyup = render _
+
+  def main(): Unit = {
+    document.getElementById("fileinput").addEventListener("change", readFile _)
   }
 
-  private def loadGraph() = {
-
-    val scalaFun: (js.Any, js.Any) => Unit = (error: js.Any, rawPeople: js.Any) => {
-      g.alert(rawPeople)
-      Unit
+  def readFile(evt: Event) = {
+    val file = evt.target.asInstanceOf[org.scalajs.dom.html.Input]
+    file.disabled = true
+    val reader = new FileReader()
+    reader.readAsText(file.files(0))
+    reader.onload = (_: UIEvent) => {
+      val text = reader.result.asInstanceOf[String]
+      graph = upickle.default.read[Seq[Utils.Node]](text).sortBy(_.encodedName)
+      val target = document.getElementById("list")
+      target.appendChild(div(div(box), output).render)
+      render(evt)
     }
-    val jsFun: js.Function2[js.Any, js.Any, Unit] = scalaFun
-    d3.json("graph.json", jsFun)
   }
 
+  def renderList = ul(
+    for {
+      node <- graph
+      if node.encodedName.toLowerCase.startsWith(box.value.toLowerCase)
+    } yield li(node.encodedName)
+  ).render
+
+  def render(e: Event) = {
+    output.innerHTML = ""
+    output.appendChild(renderList)
+  }
 }
