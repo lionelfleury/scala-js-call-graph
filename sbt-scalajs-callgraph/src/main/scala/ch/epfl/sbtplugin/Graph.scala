@@ -12,6 +12,41 @@ import scala.collection.mutable
 
 object Graph {
 
+  def decodeMethodName(encodedName: String): (String, List[ReferenceType], Option[ReferenceType]) = {
+    val (simpleName, privateAndSigString) =
+      if (isConstructorName(encodedName)) {
+        val privateAndSigString =
+          if (encodedName == "init___") ""
+          else encodedName.stripPrefix("init___") + "__"
+        ("<init>", privateAndSigString)
+      } else {
+        val pos = encodedName.indexOf("__")
+        if (pos != -1) {
+          val pos2 =
+            if (!encodedName.substring(pos + 2).startsWith("p")) pos
+            else encodedName.indexOf("__", pos + 2)
+          (encodedName.substring(0, pos), encodedName.substring(pos2 + 2))
+        } else {
+          (encodedName,"")
+        }
+      }
+
+    // -1 preserves trailing empty strings
+    val parts = privateAndSigString.split("__", -1).toSeq
+    val paramsAndResultStrings =
+      if (parts.headOption.exists(_.startsWith("p"))) parts.tail
+      else parts
+
+    val paramStrings :+ resultString = paramsAndResultStrings
+
+    val paramTypes = paramStrings.map(decodeReferenceType).toList
+    val resultType =
+      if (resultString == "") None // constructor or reflective proxy
+      else Some(decodeReferenceType(resultString))
+
+    (simpleName, paramTypes, resultType)
+  }
+
   def displayName(encodedName: String): String = {
     def typeDisplayName(tpe: ReferenceType): String = tpe match {
       case ClassType(encodedName) => decodeClassName(encodedName)
@@ -19,7 +54,7 @@ object Graph {
     }
 
     val (simpleName, paramTypes, resultType) =
-      Definitions.decodeMethodName(encodedName)
+      decodeMethodName(encodedName)
 
     simpleName + "(" + paramTypes.map(typeDisplayName).mkString(",") + ")" +
       resultType.fold("")(typeDisplayName)
@@ -44,7 +79,7 @@ object Graph {
       (methodInfo.methodsCalled.values ++ methodInfo.methodsCalledStatically.values).flatten.toSet
     new MethodNode(
       encodedName,
-      encodedName,
+      displayName(encodedName),
       methodInfo.isExported,
       methodsCalled,
       methodInfo.instantiatedClasses)

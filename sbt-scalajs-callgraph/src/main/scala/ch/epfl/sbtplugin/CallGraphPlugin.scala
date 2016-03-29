@@ -9,8 +9,6 @@ import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys._
 import sbt._
 
-import scala.util.{Failure, Success}
-
 object CallGraphPlugin extends AutoPlugin {
 
   override def trigger = allRequirements
