@@ -1,45 +1,63 @@
 package ch.epfl.callgraph.visualization
 
-import ch.epfl.callgraph.utils._
-import org.scalajs.dom.raw.FileReader
-import org.scalajs.dom.{Event, MouseEvent, UIEvent, document}
-import upickle.default._
+import ch.epfl.callgraph.utils.Utils.{MethodNode, ClassNode}
 
+import org.scalajs.dom.window
+import ch.epfl.callgraph.utils._
+import org.scalajs.dom.html.Div
+import org.scalajs.dom.raw.FileReader
+import org.scalajs.dom.{Event, MouseEvent, UIEvent, console, document}
+import upickle.default._
 import scala.scalajs.js.Dynamic.{global => g}
 import scala.scalajs.js.JSApp
 import scalatags.JsDom.all._
 
 object Visualization extends JSApp {
-  var graph = Seq[Utils.Node]()
+  val classes = collection.mutable.Set[ClassNode]()
+  val methods = collection.mutable.Set[MethodNode]()
+//  var graph = Seq[Utils.Node]()
 
-  val box = input(`type` := "text", placeholder := "Type here !").render
+  val fileInput = input(`type` := "file").render
+  val box = input(`type` := "text", placeholder := "Type here to search !").render
   val exported = input(`type` := "checkbox", checked).render
-  val output = div().render
+  val searchField = div(box, " Only exported:", exported).render
+  val output = span.render
 
   box.onkeyup = searchList _
   exported.onclick = searchList _
 
   def main(): Unit = {
-    document.getElementById("fileinput").addEventListener("change", readFile _)
+    val width = window.innerWidth
+    val height = window.innerHeight
+    val target = document.getElementById("nav").asInstanceOf[Div]
+    target.appendChild(fileInput)
+    fileInput.onchange = readFile(target) _
   }
 
-  def readFile(evt: Event) = {
-    val file = evt.target.asInstanceOf[org.scalajs.dom.html.Input]
-    file.disabled = true
+//  def filter(cond: Utils.Node => Boolean): Seq[Utils.Node] = graph.filter(cond)
+
+  def readFile(target: Div)(evt: Event) = {
+    evt.stopPropagation()
+    target.innerHTML = ""
+    target.appendChild(div(searchField, output).render)
     val reader = new FileReader()
-    reader.readAsText(file.files(0))
-    reader.onload = (_: UIEvent) => {
+    reader.readAsText(fileInput.files(0))
+    reader.onload = (e: UIEvent) => {
       val text = reader.result.asInstanceOf[String]
-      graph = upickle.default.read[Seq[Utils.Node]](text).sortBy(_.displayName)
-      val target = document.getElementById("list")
-      target.appendChild(div(div(box, p("Only exported:", exported)), output).render)
-      searchList(evt)
+      for (node <- upickle.default.read[Seq[Utils.Node]](text)) {
+        node match {
+          case node: MethodNode => methods += node
+          case node: ClassNode => classes += node
+        }
+      }
+      searchList(e)
+      D3Graph.renderGraph(classes.filter(_.isExported).toSeq)
     }
   }
 
   def renderList = ul(
     for {
-      node <- graph
+      node <- classes.toSeq
       if (if (exported.checked) node.isExported else true) &&
         node.displayName.toLowerCase.contains(box.value.toLowerCase)
     } yield li(node.displayName, onclick := view _)
@@ -47,11 +65,18 @@ object Visualization extends JSApp {
 
   def view(e: MouseEvent) = {
     val text = e.srcElement.textContent
-    g.alert(text)
+    classes.find(n => n.displayName == text) match {
+      case None => g.alert("Not found")
+      case Some(n) => g.alert("Methods called: " + n.asInstanceOf[MethodNode].methodsCalled.mkString(";"))
+    }
   }
 
   def searchList(e: Event) = {
     output.innerHTML = ""
     output.appendChild(renderList)
   }
+
+  def onlyExported(node: Utils.Node) =
+    if (exported.checked) node.isExported else true
+
 }

@@ -27,7 +27,7 @@ object Graph {
             else encodedName.indexOf("__", pos + 2)
           (encodedName.substring(0, pos), encodedName.substring(pos2 + 2))
         } else {
-          (encodedName,"")
+          (encodedName, "")
         }
       }
 
@@ -66,7 +66,7 @@ object Graph {
     val methods = classInfo.methods.map(_.encodedName).toSet
     new ClassNode(
       encodedName,
-      decodeClassName(encodedName), // TODO : look at decodeMethodName too... but buggy!
+      decodeClassName(encodedName),
       classInfo.isExported,
       classInfo.superClass,
       classInfo.interfaces,
@@ -91,17 +91,18 @@ object Graph {
     def addToGraph(node: Node): Node =
       graph.getOrElseUpdate(node.encodedName, node)
 
-    classInfos foreach { classInfo: ClassInfo =>
+    for (classInfo <- classInfos) {
+//      TODO : CHECK IF CLASS REALLY MATTTERS !!
       val classNode = toClassNode(classInfo)
       addToGraph(classNode)
 
-      val methodInfos = classInfo.methods
-
-      methodInfos foreach { methodInfo: MethodInfo =>
+      for (methodInfo <- classInfo.methods) {
         val methodNode = toMethodNode(methodInfo)
         addToGraph(methodNode)
       }
+
     }
+
     graph.values.toSeq
   }
 
