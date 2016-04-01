@@ -6,6 +6,6 @@ unmanagedSourceDirectories in Compile ++= {
   )
 }
 
-libraryDependencies += "com.lihaoyi" %% "upickle" % "0.3.9"
+libraryDependencies += "com.lihaoyi" %% "upickle" % "0.3.8"
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.8")

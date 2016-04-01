@@ -85,7 +85,7 @@ object Graph {
       methodInfo.instantiatedClasses)
   }
 
-  def createFrom(classInfos: Seq[ClassInfo]): Seq[Node] = {
+  def createFrom(classInfos: Seq[ClassInfo]): Map[String, Node] = {
     val graph = mutable.Map[String, Node]()
 
     def addToGraph(node: Node): Node =
@@ -103,7 +103,7 @@ object Graph {
 
     }
 
-    graph.values.toSeq
+    graph
   }
 
   def writeToFile(graph: Seq[Node], file: File): Unit = {

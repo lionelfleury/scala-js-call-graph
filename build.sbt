@@ -18,7 +18,7 @@ lazy val `sbt-scalajs-callgraph-utils` =
   (crossProject in file("sbt-scalajs-callgraph-utils")).
     settings(commonSettings: _*).
     settings(
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.9",
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8",
       crossScalaVersions := Seq("2.10.6", "2.11.8")
     )
 
@@ -41,7 +41,7 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.singlespaced" %%% "scalajs-d3" % "0.3.1",
-      "com.lihaoyi" %%% "upickle" % "0.3.9",
+      "com.lihaoyi" %%% "upickle" % "0.3.8",
       "com.lihaoyi" %%% "scalatags" % "0.5.4"),
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
