@@ -51,8 +51,7 @@ object Visualization extends JSApp {
         }
       }
       searchList(e)
-      D3Graph.testGraph2()
-//      D3Graph.renderGraph(classes.filter(_.isExported).toSeq)
+      D3Graph.renderGraph(classes.filter(_.isExported).toSeq)
     }
   }
 
