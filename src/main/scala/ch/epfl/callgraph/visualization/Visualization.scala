@@ -1,6 +1,6 @@
 package ch.epfl.callgraph.visualization
 
-import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
+import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, CallGraph}
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}
@@ -12,8 +12,7 @@ import scalatags.JsDom.all._
 import scala.collection._
 
 object Visualization extends JSApp {
-  val classes = mutable.Set[ClassNode]()
-  val methods = mutable.Set[MethodNode]()
+  var callGraph: CallGraph = null
 
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here to search !").render
@@ -38,22 +37,18 @@ object Visualization extends JSApp {
     reader.readAsText(fileInput.files(0))
     reader.onload = (e: sdom.UIEvent) => {
       val text = reader.result.asInstanceOf[String]
-      val nodes = upickle.read[Seq[Node]](text)
-      for (node <- nodes) node match {
-        case node: MethodNode => methods += node
-        case node: ClassNode => classes += node
-      }
-      sdom.console.log("Classes:" + classes.size)
-      sdom.console.log("Methods:" + methods.size)
+      callGraph = upickle.read[CallGraph](text)
+      sdom.console.log("Classes:" + callGraph.classes.size)
+      sdom.console.log("Methods:" + callGraph.methods.size)
 
       searchList(e)
-      D3Graph.renderGraph(classes.filter(_.isExported).toSeq, methods.toSeq)
+      D3Graph.renderGraph(callGraph)
     }
   }
 
   def renderList = ul(
     for {
-      node <- classes.toSeq
+      node <- callGraph.classes.toSeq
       if (if (exported.checked) node.isExported else true) &&
         node.displayName.toLowerCase.contains(box.value.toLowerCase)
     } yield li(node.displayName, onclick := view _)
@@ -61,7 +56,7 @@ object Visualization extends JSApp {
 
   def view(evt: sdom.MouseEvent) = {
     val text = evt.srcElement.textContent
-    classes.find(n => n.displayName == text) match {
+    callGraph.classes.find(n => n.displayName == text) match {
       case None => g.alert("Not found")
       case Some(n) => g.alert("Methods called: " + n.asInstanceOf[MethodNode].methodsCalled.mkString(";"))
     }
