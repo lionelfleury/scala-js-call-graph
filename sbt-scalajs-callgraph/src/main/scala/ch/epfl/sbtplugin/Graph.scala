@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 object Graph {
 
-  def decodeMethodName(encodedName: String): (String, List[ReferenceType], Option[ReferenceType]) = {
+  private def decodeMethodName(encodedName: String): (String, List[ReferenceType], Option[ReferenceType]) = {
     val (simpleName, privateAndSigString) =
       if (isConstructorName(encodedName)) {
         val privateAndSigString =
@@ -47,67 +47,60 @@ object Graph {
     (simpleName, paramTypes, resultType)
   }
 
-  def displayName(encodedName: String): String = {
+  private def displayName(encodedName: String): String = {
     def typeDisplayName(tpe: ReferenceType): String = tpe match {
       case ClassType(encodedName) => decodeClassName(encodedName)
       case ArrayType(base, dimensions) => "[" * dimensions + decodeClassName(base)
     }
 
-    val (simpleName, paramTypes, resultType) =
-      decodeMethodName(encodedName)
+    val (simpleName, paramTypes, resultType) = decodeMethodName(encodedName)
 
     simpleName + "(" + paramTypes.map(typeDisplayName).mkString(",") + ")" +
       resultType.fold("")(typeDisplayName)
   }
 
-  // TODO : replace those with the new ir.Infos classes
-  private[this] def toClassNode(classInfo: ClassInfo): ClassNode = {
-    val encodedName = classInfo.encodedName
-    val methods = classInfo.methods.map(_.encodedName).toSet
+  private[this] def toClassNode(ci: ClassInfo): ClassNode = {
+    val encodedName = ci.encodedName
+    val methods = ci.methods.map(_.encodedName).toSet
     new ClassNode(
       encodedName,
       decodeClassName(encodedName),
-      classInfo.isExported,
-      classInfo.superClass,
-      classInfo.interfaces,
+      ci.isExported,
+      ci.superClass,
+      ci.interfaces,
       methods)
   }
 
-  private[this] def toMethodNode(methodInfo: MethodInfo): MethodNode = {
-    val encodedName = methodInfo.encodedName
-    val methodsCalled =
-      (methodInfo.methodsCalled.values ++ methodInfo.methodsCalledStatically.values).flatten.toSet
+  private[this] def toMethodNode(mi: MethodInfo): MethodNode = {
+    val encodedName = mi.encodedName
+    val methodsCalled = mutable.Set[String]()
+    methodsCalled ++= mi.methodsCalled.values.flatten
+    methodsCalled ++= mi.methodsCalledStatically.values.flatten
+    methodsCalled ++= mi.staticMethodsCalled.values.flatten
     new MethodNode(
       encodedName,
       displayName(encodedName),
-      methodInfo.isExported,
-      methodsCalled,
-      methodInfo.instantiatedClasses)
+      mi.isExported,
+      methodsCalled.toSet,
+      mi.instantiatedClasses)
   }
 
-  def createFrom(classInfos: Seq[ClassInfo]): Map[String, Node] = {
-    val graph = mutable.Map[String, Node]()
-
-    def addToGraph(node: Node): Node =
-      graph.getOrElseUpdate(node.encodedName, node)
+  def createFrom(classInfos: Seq[ClassInfo]): CallGraph = {
+    val classes = mutable.Set[ClassNode]()
+    val methods = mutable.Set[MethodNode]()
 
     for (classInfo <- classInfos) {
-//      TODO : CHECK IF CLASS REALLY MATTTERS !!
-      val classNode = toClassNode(classInfo)
-      addToGraph(classNode)
-
+      classes += toClassNode(classInfo)
       for (methodInfo <- classInfo.methods) {
-        val methodNode = toMethodNode(methodInfo)
-        addToGraph(methodNode)
+        methods += toMethodNode(methodInfo)
       }
-
     }
 
-    graph
+    CallGraph(classes.toSet, methods.toSet)
   }
 
-  def writeToFile(graph: Seq[Node], file: File): Unit = {
-    val json = upickle.default.write(graph)
+  def writeToFile(graph: CallGraph, file: File): Unit = {
+    val json = upickle.default.write[CallGraph](graph)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(json)
     bw.flush()

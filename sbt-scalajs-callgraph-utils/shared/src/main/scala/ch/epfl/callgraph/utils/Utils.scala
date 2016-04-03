@@ -15,7 +15,7 @@ object Utils {
                        displayName: String,
                        isExported: Boolean,
                        superClass: Option[String],
-                       interfaces: List[String],
+                       interfaces: Seq[String],
                        methods: Set[String]) extends Node
 
   @key("Method")
@@ -24,5 +24,7 @@ object Utils {
                         isExported: Boolean,
                         methodsCalled: Set[String],
                         instantiatedClasses: List[String]) extends Node
+
+  final case class CallGraph(classes: Set[ClassNode], methods: Set[MethodNode])
 
 }
