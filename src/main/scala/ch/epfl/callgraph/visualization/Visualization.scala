@@ -9,7 +9,6 @@ import upickle.{default => upickle}
 import scala.scalajs.js.Dynamic.{global => g}
 import scala.scalajs.js.JSApp
 import scalatags.JsDom.all._
-import scala.collection._
 
 object Visualization extends JSApp {
   var callGraph: CallGraph = null

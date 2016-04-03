@@ -20,6 +20,8 @@ object D3Graph {
   val links = mutable.ArrayBuffer[GraphLink]()
 
   def renderGraph(callGraph: CallGraph): Unit = {
+    val d3d = js.Dynamic.global.d3
+
     val color = d3.scale.category10()
     val width: Double = 800
     val height: Double = 500
@@ -29,14 +31,27 @@ object D3Graph {
       .charge(-400)
       .linkDistance(100)
 
-    val svg = d3.select("#main").append("svg")
+    val baseSvg = d3.select("#main").append("svg")
       .attr("width", width)
       .attr("height", height)
 
+    val svgGroup = baseSvg.append("g")
+
+    def zoom(): Unit = {
+      svgGroup.attr("transform", "translate(" + d3d.event.translate + ")scale(" + d3d.event.scale + ")")
+    }
+
+    val zoomListener: js.Function =
+      d3d.behavior.zoom().scaleExtent(js.Array(0.1, 3.0)).on("zoom", zoom _).asInstanceOf[js.Function]
+
+    baseSvg.call(zoomListener)
+
+
+
     var link =
-      svg.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
-    var node = svg.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
-    var text = svg.selectAll[GraphNode]("text.label").data[GraphNode](js.Array[GraphNode]())
+      svgGroup.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
+    var node = svgGroup.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
+    var text = svgGroup.selectAll[GraphNode]("text.label").data[GraphNode](js.Array[GraphNode]())
 
     def tick(e: dom.Event): Unit = {
       text
