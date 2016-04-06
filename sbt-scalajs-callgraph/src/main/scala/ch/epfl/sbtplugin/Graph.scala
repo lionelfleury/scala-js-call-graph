@@ -1,5 +1,6 @@
 package ch.epfl.sbtplugin
 
+import upickle._
 import java.io.{BufferedWriter, File, FileWriter}
 
 import ch.epfl.callgraph.utils.Utils._
@@ -59,9 +60,8 @@ object Graph {
       resultType.fold("")(typeDisplayName)
   }
 
-  private[this] def toClassNode(ci: ClassInfo): ClassNode = {
+  private[this] def toClassNode(ci: ClassInfo, methods: Set[MethodNode]): ClassNode = {
     val encodedName = ci.encodedName
-    val methods = ci.methods.map(_.encodedName).toSet
     new ClassNode(
       encodedName,
       decodeClassName(encodedName),
@@ -71,36 +71,31 @@ object Graph {
       methods)
   }
 
-  private[this] def toMethodNode(mi: MethodInfo): MethodNode = {
+  private[this] def toMethodNode(mi: MethodInfo, ci: ClassInfo): MethodNode = {
     val encodedName = mi.encodedName
-    val methodsCalled = mutable.Set[String]()
-    methodsCalled ++= mi.methodsCalled.values.flatten
-    methodsCalled ++= mi.methodsCalledStatically.values.flatten
-    methodsCalled ++= mi.staticMethodsCalled.values.flatten
+    val methodsCalled =  mi.methodsCalled ++ mi.methodsCalledStatically ++ mi.staticMethodsCalled
     new MethodNode(
       encodedName,
       displayName(encodedName),
       mi.isExported,
-      methodsCalled.toSet,
+      ci.encodedName,
+      methodsCalled,
       mi.instantiatedClasses)
   }
 
   def createFrom(classInfos: Seq[ClassInfo]): CallGraph = {
     val classes = mutable.Set[ClassNode]()
-    val methods = mutable.Set[MethodNode]()
 
     for (classInfo <- classInfos) {
-      classes += toClassNode(classInfo)
-      for (methodInfo <- classInfo.methods) {
-        methods += toMethodNode(methodInfo)
-      }
+      val classMethods = classInfo.methods.map(toMethodNode(_, classInfo))
+      classes += toClassNode(classInfo, classMethods.toSet)
     }
 
-    CallGraph(classes.toSet, methods.toSet)
+    CallGraph(classes.toSet)
   }
 
   def writeToFile(graph: CallGraph, file: File): Unit = {
-    val json = upickle.default.write[CallGraph](graph)
+    val json = upickle.default.write(graph)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(json)
     bw.flush()

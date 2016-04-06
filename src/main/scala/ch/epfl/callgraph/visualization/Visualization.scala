@@ -38,7 +38,6 @@ object Visualization extends JSApp {
       val text = reader.result.asInstanceOf[String]
       callGraph = upickle.read[CallGraph](text)
       sdom.console.log("Classes:" + callGraph.classes.size)
-      sdom.console.log("Methods:" + callGraph.methods.size)
 
       searchList(e)
       D3Graph.renderGraph(callGraph)

@@ -1,18 +1,20 @@
 package ch.epfl.callgraph.visualization
 
-import ch.epfl.callgraph.utils.Utils.CallGraph
+import ch.epfl.callgraph.utils.Utils.{CallGraph, ClassNode, MethodNode, Node}
 import org.scalajs.dom
 import org.singlespaced.d3js.Ops._
 import org.singlespaced.d3js._
 
 import scala.collection._
+import scala.collection.immutable.Map
 import scala.scalajs.js
 import js.JSConverters._
 
 object D3Graph {
 
   case class GraphNode(name: String,
-                       group: Int) extends forceModule.Node
+                       group: Int,
+                       data: Node) extends forceModule.Node
 
   case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
 
@@ -68,10 +70,10 @@ object D3Graph {
     }
 
     for (n <- callGraph.classes.filter(_.isExported)) {
-      val node = GraphNode(n.encodedName, 0)
+      val node = GraphNode(n.encodedName, 0, n)
       nodes += node
       for (m <- n.methods.toSeq) {
-        val target = GraphNode(m, 1)
+        val target = GraphNode(m.encodedName, 1, m)
         nodes += target
         links += GraphLink(node, target)
       }
@@ -80,22 +82,44 @@ object D3Graph {
     update()
 
 
-    def addMethods(source: GraphNode, methods: Seq[String]) = {
-      for (m <- methods) {
-        val node = nodes.find(_.name == m).getOrElse(GraphNode(m, 5))
-        nodes += node
-        links += GraphLink(source, node)
+
+    def addMethods(source: GraphNode, methods: Map[String, Seq[String]]) = {
+      /* Add a link from source to methodName in node to the graph */
+      def addLinkToGraph(node: ClassNode, methodName: String) = {
+        dom.console.log("From " + source.name + " to " + methodName)
+        nodes.find(_.name == methodName) match { // Find the node in the graph
+          case Some(graphNode) => links += GraphLink(source, graphNode)
+          case None =>
+            dom.console.log("Available methods: " + node.methods + " in " + node.encodedName)
+            node.methods.find(_.encodedName == methodName) match { // Lookup the utils.MethodNode inside the class
+              case Some(methNode) =>
+                val newNode = GraphNode(methodName, 5, methNode)
+                nodes += newNode
+                links += GraphLink(source, newNode)
+                dom.console.log("Add: " + methodName + " to graph")
+              case None => dom.console.log("Method not found: " + methodName)
+            }
+        }
+        update()
+      }
+      for (c <- methods) {
+        callGraph.classes.find(_.encodedName == c._1) match {
+          case Some(classNode) => c._2.foreach(addLinkToGraph(classNode, _))
+          case _ => dom.console.log("no class found " + c._1)
+        }
       }
     }
 
     def click(n: GraphNode) = {
-      val ms = callGraph.methods.find(_.encodedName == n.name) match {
-        case Some(m) => m.methodsCalled.toSeq
-        case _ => Nil
+      n.data match {
+        case method: MethodNode =>
+          val methods = method.methodsCalled
+          addMethods(n, methods)
+          update()
+          dom.console.log("Children count:" + methods.flatMap(_._2).size)
+        case cl : ClassNode => Nil
       }
-      addMethods(n, ms)
-      update()
-      dom.console.log("Children count:" + ms.size)
+      dom.console.log("Clicked on: " + n.name)
     }
 
     def update() {
