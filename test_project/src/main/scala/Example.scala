@@ -3,10 +3,11 @@ import scala.scalajs.js.annotation.JSExport
 
 object Example extends JSApp {
   def main(): Unit = {
-    foo()
+    foo(42)
+    println("The world's a better place...")
   }
 
   @JSExport
-  def foo(): Unit =
-    println("Hello world!")
+  def foo(i: Int): Unit =
+    println(s"Hello world! $i")
 }

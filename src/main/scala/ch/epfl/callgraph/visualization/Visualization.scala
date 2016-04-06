@@ -45,14 +45,6 @@ object Visualization extends JSApp {
     }
   }
 
-  def renderList = ul(
-    for {
-      node <- callGraph.classes.toSeq
-      if (if (exported.checked) node.isExported else true) &&
-        node.displayName.toLowerCase.contains(box.value.toLowerCase)
-    } yield li(node.displayName, onclick := view _)
-  ).render
-
   def view(evt: sdom.MouseEvent) = {
     val text = evt.srcElement.textContent
     callGraph.classes.find(n => n.displayName == text) match {
@@ -60,6 +52,14 @@ object Visualization extends JSApp {
       case Some(n) => g.alert("Methods called: " + n.asInstanceOf[MethodNode].methodsCalled.mkString(";"))
     }
   }
+
+  def renderList = ul(
+    for {
+      node <- callGraph.classes.toSeq
+      if (if (exported.checked) node.isExported else true) &&
+        node.displayName.toLowerCase.contains(box.value.toLowerCase)
+    } yield li(node.displayName, onclick := view _)
+  ).render
 
   def searchList(e: sdom.Event) = {
     output.innerHTML = ""
