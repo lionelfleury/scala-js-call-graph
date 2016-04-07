@@ -1,6 +1,6 @@
 package ch.epfl.callgraph.visualization
 
-import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, CallGraph}
+import ch.epfl.callgraph.utils.Utils.{CallGraph, MethodNode}
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}

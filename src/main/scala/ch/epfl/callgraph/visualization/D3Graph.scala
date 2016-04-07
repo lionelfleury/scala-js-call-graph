@@ -84,24 +84,44 @@ object D3Graph {
 
 
     def addMethods(source: GraphNode, methods: Map[String, Seq[String]]) = {
+
+      /* Find all subclasses of a given ClassNode */
+      def subClasses(root: ClassNode) = callGraph.classes.filter(_.superClass == Some(root.encodedName))
+
+      /* Find a MethodNode from a encodedName,
+       * This function must not only look in the given class, but also
+       * in all its children.
+       */
+      def findMethodNode(methodName: String, root: ClassNode) = {
+        root.methods.find(_.encodedName == methodName) match { // Lookup the utils.MethodNode inside the class
+          case Some(methNode) => addNodeToGraph(methNode)
+          case None => // Need to look in subclasses
+            subClasses(root).foreach(cl => {
+              cl.methods.find(_.encodedName == methodName) match {
+                case Some(node) => addNodeToGraph(node)
+                case None =>
+              }
+            })
+        }
+      }
+
+      /* Create a ney GraphNode from a MethodNode, and add it to the graph with a link */
+      def addNodeToGraph(methNode: MethodNode) = {
+        val newNode = GraphNode(methNode.encodedName, 5, methNode)
+        nodes += newNode
+        links += GraphLink(source, newNode)
+      }
+
       /* Add a link from source to methodName in node to the graph */
       def addLinkToGraph(node: ClassNode, methodName: String) = {
-        dom.console.log("From " + source.name + " to " + methodName)
         nodes.find(_.name == methodName) match { // Find the node in the graph
           case Some(graphNode) => links += GraphLink(source, graphNode)
-          case None =>
-            dom.console.log("Available methods: " + node.methods + " in " + node.encodedName)
-            node.methods.find(_.encodedName == methodName) match { // Lookup the utils.MethodNode inside the class
-              case Some(methNode) =>
-                val newNode = GraphNode(methodName, 5, methNode)
-                nodes += newNode
-                links += GraphLink(source, newNode)
-                dom.console.log("Add: " + methodName + " to graph")
-              case None => dom.console.log("Method not found: " + methodName)
-            }
+          case None => findMethodNode(methodName, node)
+
         }
         update()
       }
+
       for (c <- methods) {
         callGraph.classes.find(_.encodedName == c._1) match {
           case Some(classNode) => c._2.foreach(addLinkToGraph(classNode, _))
@@ -116,7 +136,6 @@ object D3Graph {
           val methods = method.methodsCalled
           addMethods(n, methods)
           update()
-          dom.console.log("Children count:" + methods.flatMap(_._2).size)
         case cl : ClassNode => Nil
       }
       dom.console.log("Clicked on: " + n.name)
