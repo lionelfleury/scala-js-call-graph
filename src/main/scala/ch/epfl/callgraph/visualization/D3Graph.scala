@@ -7,10 +7,18 @@ import org.singlespaced.d3js._
 
 import scala.collection._
 import scala.collection.immutable.Map
+import org.scalajs.dom.html.Div
 import scala.scalajs.js
-import js.JSConverters._
+import scala.scalajs.js.JSConverters._
+import scalatags.JsDom.all._
 
+/**
+  * A D3JS class modeling our graph.
+  * Each node has a name, and a group, as well as data, which points to the actual Utils.Node containing the
+  * relevant information.
+  */
 object D3Graph {
+
 
   case class GraphNode(name: String,
                        group: Int,
@@ -21,7 +29,9 @@ object D3Graph {
   val nodes = mutable.ArrayBuffer[GraphNode]()
   val links = mutable.ArrayBuffer[GraphLink]()
 
-  def renderGraph(callGraph: CallGraph): Unit = {
+
+
+  def renderGraph(callGraph: CallGraph, nav: Div): Unit = {
     val d3d = js.Dynamic.global.d3
 
     val color = d3.scale.category10()
@@ -70,10 +80,10 @@ object D3Graph {
     }
 
     for (n <- callGraph.classes.filter(_.isExported)) {
-      val node = GraphNode(n.encodedName, 0, n)
+      val node = GraphNode(n.displayName, 0, n)
       nodes += node
       for (m <- n.methods.toSeq) {
-        val target = GraphNode(m.encodedName, 1, m)
+        val target = GraphNode(m.displayName, 1, m)
         nodes += target
         links += GraphLink(node, target)
       }
@@ -83,19 +93,30 @@ object D3Graph {
 
 
 
+    /**
+      * Add a MethodNode to the graph
+      * @param source the source of the link
+      * @param methods all the reachable methods from the source, grouped by className
+      */
     def addMethods(source: GraphNode, methods: Map[String, Seq[String]]) = {
 
-      /* Find all subclasses of a given ClassNode */
+      /**
+        * Find all subclasses of a given ClassNode
+        * @param root the node we want to find the subclasses of
+        * @return a sequence of nodes that have root as parent
+        */
       def subClasses(root: ClassNode) = callGraph.classes.filter(_.superClass == Some(root.encodedName))
 
-      /* Find a MethodNode from a encodedName,
-       * This function must not only look in the given class, but also
-       * in all its children.
-       */
-      def findMethodNode(methodName: String, root: ClassNode) = {
-        root.methods.find(_.encodedName == methodName) match { // Lookup the utils.MethodNode inside the class
+      /**
+        * Add a MethodNode to the graph given its encodedName,
+        * This function must not only look in the given class, but also in all its children.
+        * @param methodName the name of the method
+        * @param root the class in which we should look the method in
+        */
+      def addMethodNode(methodName: String, root: ClassNode) = {
+        root.methods.find(_.encodedName == methodName) match {
           case Some(methNode) => addNodeToGraph(methNode)
-          case None => // Need to look in subclasses
+          case None =>
             subClasses(root).foreach(cl => {
               cl.methods.find(_.encodedName == methodName) match {
                 case Some(node) => addNodeToGraph(node)
@@ -105,18 +126,26 @@ object D3Graph {
         }
       }
 
-      /* Create a ney GraphNode from a MethodNode, and add it to the graph with a link */
+      /**
+        * Create a new GraphNode from a MethodNode, and add it to the graph with a link.
+        * Link it with the given source
+        * @param methNode the MethodNode to convert
+        */
       def addNodeToGraph(methNode: MethodNode) = {
-        val newNode = GraphNode(methNode.encodedName, 5, methNode)
+        val newNode = GraphNode(methNode.displayName, 5, methNode)
         nodes += newNode
         links += GraphLink(source, newNode)
       }
 
-      /* Add a link from source to methodName in node to the graph */
+      /**
+        * Add a link from source to methodName in node to the graph
+        * @param node
+        * @param methodName
+        */
       def addLinkToGraph(node: ClassNode, methodName: String) = {
         nodes.find(_.name == methodName) match { // Find the node in the graph
           case Some(graphNode) => links += GraphLink(source, graphNode)
-          case None => findMethodNode(methodName, node)
+          case None => addMethodNode(methodName, node)
 
         }
         update()
@@ -139,6 +168,14 @@ object D3Graph {
         case cl : ClassNode => Nil
       }
       dom.console.log("Clicked on: " + n.name)
+    }
+
+    def contextMenu(n: GraphNode) = {
+      val x = d3.event.asInstanceOf[dom.MouseEvent].clientX + "px"
+      val y = d3.event.asInstanceOf[dom.MouseEvent].clientY + "px"
+      nav.setAttribute("class", "context-menu--active context-menu")
+      nav.setAttribute("style", "left:" +  x + " ;top:" + y)
+      d3.event.asInstanceOf[dom.MouseEvent].preventDefault()
     }
 
     def update() {
@@ -169,6 +206,7 @@ object D3Graph {
         .attr("r", 5)
         .attr("fill", (n: GraphNode) => color(n.group.toString))
         .on("click", click _)
+        .on("contextmenu", contextMenu _)
         .call(force.drag)
 
       text = text.data(ns)

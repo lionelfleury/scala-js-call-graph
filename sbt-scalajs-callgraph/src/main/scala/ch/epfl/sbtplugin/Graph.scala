@@ -1,13 +1,11 @@
 package ch.epfl.sbtplugin
 
-import upickle._
 import java.io.{BufferedWriter, File, FileWriter}
 
 import ch.epfl.callgraph.utils.Utils._
 import org.scalajs.core.ir.Definitions._
 import org.scalajs.core.ir.Infos._
 import org.scalajs.core.ir.Types._
-import org.scalajs.core.ir._
 
 import scala.collection.mutable
 

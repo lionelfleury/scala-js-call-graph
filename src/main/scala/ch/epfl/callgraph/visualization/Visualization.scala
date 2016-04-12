@@ -13,14 +13,31 @@ import scalatags.JsDom.all._
 object Visualization extends JSApp {
   var callGraph: CallGraph = null
 
+
+  val nav = div(`class` := "context-menu")(
+    ul(`class` := "context-menu__items")(
+      li(`class` := "context-menu__item")(
+        a(`class` := "context-menu__link" )(
+          i(`class` := "fa fa-eye")("Expand Node")
+        )
+      ),
+      li(`class` := "context-menu__item")(
+        a(`class` := "context-menu__link" )(
+          i(`class` := "fa fa-eye")("Hide Node")
+        )
+      )
+    )
+  ).render
+
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here to search !").render
   val exported = input(`type` := "checkbox", checked).render
-  val searchField = div(box, " Only exported:", exported).render
   val output = span.render
 
+  val searchField = div(box, div(" Only exported:", exported)).render
+
   box.onkeyup = searchList _
-  exported.onclick = searchList _
+  exported.onclick =  searchList _
 
   def main(): Unit = {
     val target = sdom.document.getElementById("nav").asInstanceOf[Div]
@@ -31,7 +48,7 @@ object Visualization extends JSApp {
   def readFile(target: Div)(evt: sdom.Event) = {
     evt.stopPropagation()
     target.innerHTML = ""
-    target.appendChild(div(searchField, output).render)
+    target.appendChild(div(searchField, output, nav).render)
     val reader = new FileReader()
     reader.readAsText(fileInput.files(0))
     reader.onload = (e: sdom.UIEvent) => {
@@ -40,7 +57,7 @@ object Visualization extends JSApp {
       sdom.console.log("Classes:" + callGraph.classes.size)
 
       searchList(e)
-      D3Graph.renderGraph(callGraph)
+      D3Graph.renderGraph(callGraph, nav)
     }
   }
 
