@@ -2,12 +2,15 @@ package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.{CallGraph, ClassNode, MethodNode, Node}
 import org.scalajs.dom
+import org.scalajs.dom.{EventTarget, MouseEvent}
 import org.singlespaced.d3js.Ops._
 import org.singlespaced.d3js._
+import org.singlespaced.d3js.DragEvent
 
 import scala.collection._
 import scala.collection.immutable.Map
 import org.scalajs.dom.html.Div
+
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scalatags.JsDom.all._
@@ -43,29 +46,28 @@ object D3Graph {
       .charge(-400)
       .linkDistance(100)
 
-    val baseSvg = d3.select("#main").append("svg")
+    val baseSvg: Selection[EventTarget] = d3.select("#main").append("svg")
       .attr("width", width)
       .attr("height", height)
 
-    val svgGroup = baseSvg.append("g")
+    val svgGroup: Selection[EventTarget] = baseSvg.append("g")
 
-    def zoom(): Unit = {
+    def zoom(d: EventTarget, i: Double): Unit = {
       svgGroup.attr("transform", "translate(" + d3d.event.translate + ")scale(" + d3d.event.scale + ")")
     }
 
     val zoomListener: js.Function =
-      d3d.behavior.zoom().scaleExtent(js.Array(0.1, 3.0)).on("zoom", zoom _).asInstanceOf[js.Function]
+      d3.behavior.zoom[EventTarget]().scaleExtent((0.1, 3.0)).on("zoom", zoom _)
+      //d3d.behavior.zoom().scaleExtent(js.Array(0.1, 3.0)).on("zoom", zoom _).asInstanceOf[js.Function]
 
-    baseSvg.call(zoomListener)
-
-
+    //baseSvg.call(zoomListener) //TODO: redefine zoomListener
 
     var link =
       svgGroup.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
     var node = svgGroup.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
     var text = svgGroup.selectAll[GraphNode]("text.label").data[GraphNode](js.Array[GraphNode]())
 
-    def tick(e: dom.Event): Unit = {
+    def tick(): Unit = {
       text
         .attr("transform", (d: GraphNode) => "translate(" + d.x + "," + d.y + ")")
 
@@ -78,6 +80,30 @@ object D3Graph {
         .attr("cx", (d: GraphNode) => d.x)
         .attr("cy", (d: GraphNode) => d.y)
     }
+
+    def dragstart(d: GraphNode, i: Double) = {
+      force.stop() // stops the force auto positioning before you start dragging
+    }
+
+    def dragmove(d: GraphNode, i: Double) = {
+      val event = d3.event.asInstanceOf[DragEvent]
+      d.px = d.px.fold(0.0)(_ + event.dx)
+      d.py = d.py.fold(0.0)(_ + event.dy)
+      d.x = d.x.fold(0.0)(_ + event.dx)
+      d.y = d.y.fold(0.0)(_ + event.dy)
+      tick() // this is the key to make it work together with updating both px,py,x,y on d !
+    }
+
+    def dragend(d: GraphNode, i: Double) = {
+      d.fixed = d.fixed.fold(1.0)(_ => 1.0) // of course set the node to fixed so the force doesn't include the node in its auto positioning stuff
+      tick()
+      force.resume()
+    }
+
+    val node_drag = d3.behavior.drag[GraphNode]()
+      .on("dragstart", dragstart _)
+      .on("drag", dragmove _)
+      .on("dragend", dragend _)
 
     for (n <- callGraph.classes.filter(_.isExported)) {
       val node = GraphNode(n.displayName, 0, n)
@@ -185,7 +211,7 @@ object D3Graph {
       force
         .nodes(ns)
         .links(ls)
-        .on("tick", tick _)
+        .on("tick", (_:dom.Event) => tick())
         .start()
 
       link = link.data(ls) //TODO: manque un bout
@@ -207,7 +233,7 @@ object D3Graph {
         .attr("fill", (n: GraphNode) => color(n.group.toString))
         .on("click", click _)
         .on("contextmenu", contextMenu _)
-        .call(force.drag)
+        .call(node_drag)
 
       text = text.data(ns)
       text.exit().remove()
