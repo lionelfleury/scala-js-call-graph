@@ -13,7 +13,7 @@ import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scalatags.JsDom.all._
+import scala.util.matching.Regex
 
 /**
   * A D3JS class modeling our graph.
@@ -30,11 +30,18 @@ object D3Graph {
   case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
 
   val nodes = mutable.ArrayBuffer[GraphNode]()
-  val links = mutable.ArrayBuffer[GraphLink]()
-
-
+  val links = mutable.Set[GraphLink]()
 
   def renderGraph(callGraph: CallGraph, nav: Div): Unit = {
+
+    /* Transform a line to a Path */
+    def line = d3.svg.line()
+      .x( (d: GraphNode) =>  d.x.get)
+      .y( (d: GraphNode) =>  d.y.get)
+
+    /** Convert a Link into a Path */
+    def lineData = (d: GraphLink) => line(js.Array(d.source, d.target))
+
     val d3d = js.Dynamic.global.d3
 
     val color = d3.scale.category10()
@@ -50,6 +57,22 @@ object D3Graph {
       .attr("width", width)
       .attr("height", height)
 
+    /**
+      * Add style (arrow) to the marker-end path
+      */
+    baseSvg.append("svg:defs").selectAll("marker")
+      .data(js.Array("end"))
+    .enter().append("svg:marker")
+      .attr("id", "end")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 15)
+      .attr("refY", -1.5)
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("svg:path")
+      .attr("d", "M0,-5L10,0L0,5")
+
     val svgGroup: Selection[EventTarget] = baseSvg.append("g")
 
     def zoom(d: EventTarget, i: Double): Unit = {
@@ -62,8 +85,7 @@ object D3Graph {
 
     //baseSvg.call(zoomListener) //TODO: redefine zoomListener
 
-    var link =
-      svgGroup.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
+    var link = svgGroup.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
     var node = svgGroup.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
     var text = svgGroup.selectAll[GraphNode]("text.label").data[GraphNode](js.Array[GraphNode]())
 
@@ -72,20 +94,18 @@ object D3Graph {
         .attr("transform", (d: GraphNode) => "translate(" + d.x + "," + d.y + ")")
 
       link
-        .attr("x1", (d: GraphLink) => d.source.x)
-        .attr("y1", (d: GraphLink) => d.source.y)
-        .attr("x2", (d: GraphLink) => d.target.x)
-        .attr("y2", (d: GraphLink) => d.target.y)
+        .attr("d", lineData)
+
       node
         .attr("cx", (d: GraphNode) => d.x)
         .attr("cy", (d: GraphNode) => d.y)
     }
 
-    def dragstart(d: GraphNode, i: Double) = {
+    def dragStart(d: GraphNode, i: Double) = {
       force.stop() // stops the force auto positioning before you start dragging
     }
 
-    def dragmove(d: GraphNode, i: Double) = {
+    def dragMove(d: GraphNode, i: Double) = {
       val event = d3.event.asInstanceOf[DragEvent]
       d.px = d.px.fold(0.0)(_ + event.dx)
       d.py = d.py.fold(0.0)(_ + event.dy)
@@ -94,22 +114,27 @@ object D3Graph {
       tick() // this is the key to make it work together with updating both px,py,x,y on d !
     }
 
-    def dragend(d: GraphNode, i: Double) = {
+    def dragEnd(d: GraphNode, i: Double) = {
       d.fixed = d.fixed.fold(1.0)(_ => 1.0) // of course set the node to fixed so the force doesn't include the node in its auto positioning stuff
       tick()
       force.resume()
     }
 
+    def displayName(meth: MethodNode) = {
+      val r = new js.RegExp("(.*)\\(.*").exec(meth.displayName)
+      meth.className + "." + r(1).get.split('$').last
+    }
+
     val node_drag = d3.behavior.drag[GraphNode]()
-      .on("dragstart", dragstart _)
-      .on("drag", dragmove _)
-      .on("dragend", dragend _)
+      .on("dragstart", dragStart _)
+      .on("drag", dragMove _)
+      .on("dragend", dragEnd _)
 
     for (n <- callGraph.classes.filter(_.isExported)) {
       val node = GraphNode(n.displayName, 0, n)
       nodes += node
       for (m <- n.methods.toSeq) {
-        val target = GraphNode(m.displayName, 1, m)
+        val target = GraphNode(displayName(m), 1, m)
         nodes += target
         links += GraphLink(node, target)
       }
@@ -117,10 +142,9 @@ object D3Graph {
 
     update()
 
-
-
     /**
       * Add a MethodNode to the graph
+      *
       * @param source the source of the link
       * @param methods all the reachable methods from the source, grouped by className
       */
@@ -128,6 +152,7 @@ object D3Graph {
 
       /**
         * Find all subclasses of a given ClassNode
+        *
         * @param root the node we want to find the subclasses of
         * @return a sequence of nodes that have root as parent
         */
@@ -136,6 +161,7 @@ object D3Graph {
       /**
         * Add a MethodNode to the graph given its encodedName,
         * This function must not only look in the given class, but also in all its children.
+        *
         * @param methodName the name of the method
         * @param root the class in which we should look the method in
         */
@@ -155,25 +181,27 @@ object D3Graph {
       /**
         * Create a new GraphNode from a MethodNode, and add it to the graph with a link.
         * Link it with the given source
+        *
         * @param methNode the MethodNode to convert
         */
       def addNodeToGraph(methNode: MethodNode) = {
-        val newNode = GraphNode(methNode.displayName, 5, methNode)
+        val newNode = GraphNode(displayName(methNode), 5, methNode)
         nodes += newNode
         links += GraphLink(source, newNode)
       }
 
       /**
         * Add a link from source to methodName in node to the graph
+        *
         * @param node
         * @param methodName
         */
       def addLinkToGraph(node: ClassNode, methodName: String) = {
-        nodes.find(_.name == methodName) match { // Find the node in the graph
+        nodes.find(_.data.encodedName == methodName) match { // Find the node in the graph
           case Some(graphNode) => links += GraphLink(source, graphNode)
           case None => addMethodNode(methodName, node)
-
         }
+
         update()
       }
 
@@ -186,14 +214,16 @@ object D3Graph {
     }
 
     def click(n: GraphNode) = {
-      n.data match {
-        case method: MethodNode =>
-          val methods = method.methodsCalled
-          addMethods(n, methods)
-          update()
-        case cl : ClassNode => Nil
+      if (!d3.event.asInstanceOf[dom.Event].defaultPrevented) {
+        n.data match {
+          case method: MethodNode =>
+            val methods = method.methodsCalled
+            addMethods(n, methods)
+            update()
+          case cl: ClassNode => Nil
+        }
+        dom.console.log("Clicked on: " + n.name)
       }
-      dom.console.log("Clicked on: " + n.name)
     }
 
     def contextMenu(n: GraphNode) = {
@@ -214,14 +244,13 @@ object D3Graph {
         .on("tick", (_:dom.Event) => tick())
         .start()
 
+
       link = link.data(ls) //TODO: manque un bout
       link.exit().remove()
-      link.enter().insert("line", ".node")
+      link.enter().insert("path", ".node")
         .attr("class", "link")
-        .attr("x1", (d: Link[GraphNode]) => d.source.x)
-        .attr("y1", (d: Link[GraphNode]) => d.source.y)
-        .attr("x2", (d: Link[GraphNode]) => d.target.x)
-        .attr("y2", (d: Link[GraphNode]) => d.target.y)
+        .attr("d", lineData)
+        .attr("marker-end", "url(#end)")
 
       node = node.data(ns)
       node.exit().remove()
@@ -242,6 +271,8 @@ object D3Graph {
         .attr("dx", 12)
         .attr("dy", ".35em")
         .text((n: GraphNode) => n.name)
+
+
 
     }
 

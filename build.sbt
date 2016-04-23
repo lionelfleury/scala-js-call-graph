@@ -1,3 +1,5 @@
+import org.scalajs.jsenv.selenium.{CustomFileMaterializer, Firefox}
+
 ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
 
 val commonSettings: Seq[Setting[_]] = Seq(
@@ -33,19 +35,33 @@ lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
     libraryDependencies += "org.scala-js" %% "scalajs-tools" % scalaJSVersion
   ).dependsOn(utilsJVM)
 
+val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
+  testOptions +=
+    Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a"),
+  jsDependencies ++= Seq(
+    RuntimeDOM % "test",
+    "org.webjars" % "jquery" % "1.10.2" / "jquery.js"
+  )
+)
+
 lazy val `scalajs-callgraph` = (project in file(".")).
   enablePlugins(ScalaJSPlugin).
+  enablePlugins(ScalaJSJUnitPlugin).
   enablePlugins(CallGraphPlugin).
   settings(commonSettings: _*).
+  settings(testSettings).
   settings(
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.singlespaced" %%% "scalajs-d3" % "0.3.1",
+      "org.scala-js" %% "scalajs-env-selenium" % "0.1.2",
       "com.lihaoyi" %%% "upickle" % "0.3.8",
       "com.lihaoyi" %%% "scalatags" % "0.5.4"),
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
       RuntimeDOM),
+    jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox).
+      withMaterializer(new CustomFileMaterializer("index.html",   "file://" + file(".").getAbsolutePath + "/src/")),
     scalaJSStage in Global := FastOptStage,
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,
