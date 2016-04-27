@@ -15,13 +15,18 @@ import scalatags.JsDom.all._
 object Visualization extends JSApp {
   var callGraph: CallGraph = null
   var d3Graph : D3Graph = null
-  val layers = new Layers()
+  val layers : Layers = new Layers(() => {
+    d3Graph = new D3Graph(callGraph, layers)
+    d3Graph.update()
+    showLayers
+  })
 
 
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here to search !").render
   val exported = input(`type` := "checkbox", checked).render
   val output = span.render
+  val layersHTML = div(`class`:= "layers").render
 
   val searchField = div(box, div(" Only exported:", exported)).render
 
@@ -37,7 +42,7 @@ object Visualization extends JSApp {
   def readFile(target: Div)(evt: sdom.Event) = {
     evt.stopPropagation()
     target.innerHTML = ""
-    target.appendChild(div(searchField, output, ContextMenu.nav).render)
+    target.appendChild(div(searchField, output, layersHTML, ContextMenu.nav).render)
     val reader = new FileReader()
     reader.readAsText(fileInput.files(0))
     reader.onload = (e: sdom.UIEvent) => {
@@ -47,6 +52,7 @@ object Visualization extends JSApp {
       searchList(e)
       d3Graph = new D3Graph(callGraph, layers)
       d3Graph.renderGraph()
+      showLayers
     }
   }
 
@@ -71,15 +77,20 @@ object Visualization extends JSApp {
     output.appendChild(renderList)
   }
 
+  def showLayers : Unit = {
+    layersHTML.innerHTML = ""
+    layersHTML.appendChild(layers.toHTMLList)
+  }
+
   /*
       Context menu callbacks
    */
   ContextMenu.setNewLayerCallback((e: Event) => {
     layers.addLayer()
-    layers.next.nodes += d3Graph.selectedNode
+    layers.last.nodes += d3Graph.selectedNode
     d3Graph = new D3Graph(callGraph, layers)
     d3Graph.update()
-    ContextMenu.hide
+    showLayers
   })
 
 }
