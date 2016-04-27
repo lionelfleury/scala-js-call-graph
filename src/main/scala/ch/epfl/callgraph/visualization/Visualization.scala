@@ -1,9 +1,11 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.{CallGraph, MethodNode}
+import org.scalajs.dom.Event
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}
+import org.singlespaced.d3js.d3
 import upickle.{default => upickle}
 
 import scala.scalajs.js.Dynamic.{global => g}
@@ -12,22 +14,9 @@ import scalatags.JsDom.all._
 
 object Visualization extends JSApp {
   var callGraph: CallGraph = null
+  var d3Graph : D3Graph = null
+  val layers = new Layers()
 
-
-  val nav = div(`class` := "context-menu")(
-    ul(`class` := "context-menu__items")(
-      li(`class` := "context-menu__item")(
-        a(`class` := "context-menu__link" )(
-          i(`class` := "fa fa-eye")("Expand Node")
-        )
-      ),
-      li(`class` := "context-menu__item")(
-        a(`class` := "context-menu__link" )(
-          i(`class` := "fa fa-eye")("Hide Node")
-        )
-      )
-    )
-  ).render
 
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here to search !").render
@@ -48,16 +37,16 @@ object Visualization extends JSApp {
   def readFile(target: Div)(evt: sdom.Event) = {
     evt.stopPropagation()
     target.innerHTML = ""
-    target.appendChild(div(searchField, output, nav).render)
+    target.appendChild(div(searchField, output, ContextMenu.nav).render)
     val reader = new FileReader()
     reader.readAsText(fileInput.files(0))
     reader.onload = (e: sdom.UIEvent) => {
       val text = reader.result.asInstanceOf[String]
       callGraph = upickle.read[CallGraph](text)
-      sdom.console.log("Classes:" + callGraph.classes.size)
 
       searchList(e)
-      D3Graph.renderGraph(callGraph, nav)
+      d3Graph = new D3Graph(callGraph, layers)
+      d3Graph.renderGraph()
     }
   }
 
@@ -81,5 +70,16 @@ object Visualization extends JSApp {
     output.innerHTML = ""
     output.appendChild(renderList)
   }
+
+  /*
+      Context menu callbacks
+   */
+  ContextMenu.setNewLayerCallback((e: Event) => {
+    layers.addLayer()
+    layers.next.nodes += d3Graph.selectedNode
+    d3Graph = new D3Graph(callGraph, layers)
+    d3Graph.update()
+    ContextMenu.hide
+  })
 
 }
