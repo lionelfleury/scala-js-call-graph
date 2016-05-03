@@ -1,6 +1,6 @@
 package ch.epfl.callgraph.visualization
 
-import ch.epfl.callgraph.utils.Utils.{CallGraph, MethodNode}
+import ch.epfl.callgraph.utils.Utils.{CallGraph, Node}
 import org.scalajs.dom.Event
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
@@ -13,8 +13,8 @@ import scalatags.JsDom.all._
 
 object Visualization extends JSApp {
   var callGraph: CallGraph = null
-  var d3Graph : D3Graph = null
-  val layers : Layers = new Layers(() => {
+  var d3Graph: D3Graph = null
+  val layers: Layers = new Layers(() => {
     d3Graph = new D3Graph(callGraph, layers)
     d3Graph.update()
     showLayers
@@ -24,13 +24,15 @@ object Visualization extends JSApp {
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here to search !").render
   val exported = input(`type` := "checkbox", checked).render
+  val methods = input(`type` := "checkbox").render
   val output = span.render
-  val layersHTML = div(`class`:= "layers").render
+  val layersHTML = div(`class` := "layers").render
 
-  val searchField = div(box, div(" Only exported:", exported)).render
+  val searchField = div(box, div(" Only exported:", exported), div(" Methods:", methods)).render
 
   box.onkeyup = searchList _
-  exported.onclick =  searchList _
+  exported.onclick = searchList _
+  methods.onclick = searchList _
 
   def main(): Unit = {
     val target = sdom.document.getElementById("nav").asInstanceOf[Div]
@@ -60,28 +62,34 @@ object Visualization extends JSApp {
     }
   }
 
-  def view(evt: sdom.MouseEvent) = {
-    val text = evt.srcElement.textContent
-    callGraph.classes.find(n => n.displayName == text) match {
-      case None => g.alert("Not found")
-      case Some(n) => g.alert("Methods called: " + n.asInstanceOf[MethodNode].methodsCalled.mkString(";"))
-    }
-  }
+  //  def view(evt: sdom.MouseEvent) = {
+  //    val text = evt.srcElement.textContent
+  //    callGraph.classes.find(n => n.displayName == text) match {
+  //      case None => g.alert("Not found")
+  //      case Some(n) => g.alert("Methods called: " + n.asInstanceOf[MethodNode].methodsCalled.mkString(";"))
+  //    }
+  //  }
 
-  def renderList = ul(
-    for {
-      node <- callGraph.classes.toSeq
-      if (if (exported.checked) node.isExported else true) &&
-        node.displayName.toLowerCase.contains(box.value.toLowerCase)
-    } yield li(node.displayName, onclick := view _)
-  ).render
+  def renderList = {
+    def exp(node: Node) = if (exported.checked) node.isExported else true
+    val list = methods.checked match {
+      case true => for (c <- callGraph.classes.toSeq; m <- c.methods; if exp(m)) yield c.displayName + "." + m.displayName
+      case _ => for (c <- callGraph.classes.toSeq; if exp(c)) yield c.displayName
+    }
+    ul(
+      for {
+        s <- list
+        if s.toLowerCase.contains(box.value.toLowerCase)
+      } yield li(s)
+    ).render
+  }
 
   def searchList(e: sdom.Event) = {
     output.innerHTML = ""
     output.appendChild(renderList)
   }
 
-  def showLayers : Unit = {
+  def showLayers: Unit = {
     layersHTML.innerHTML = ""
     layersHTML.appendChild(layers.toHTMLList)
   }

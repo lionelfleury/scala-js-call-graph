@@ -16,11 +16,13 @@ import scala.scalajs.js.JSConverters._
 import scala.util.matching.Regex
 
 object D3Graph {
+
   case class GraphNode(name: String,
                        group: Int,
                        data: Node) extends forceModule.Node
 
   case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
+
 }
 
 /**
@@ -29,6 +31,7 @@ object D3Graph {
   * relevant information.
   */
 class D3Graph(callGraph: CallGraph, layers: Layers) {
+
   import D3Graph._
 
   val d3d = js.Dynamic.global.d3
@@ -76,7 +79,8 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     .on("drag", dragMove _)
     .on("dragend", dragEnd _)
 
-  var selectedNode : GraphNode = null
+  var selectedNode: GraphNode = null
+
   /**
     * Layer related code
     */
@@ -84,8 +88,9 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
 
   /* Transform a line to a Path */
   def line = d3.svg.line()
-    .x( (d: GraphNode) =>  d.x.get)
-    .y( (d: GraphNode) =>  d.y.get)
+    .x((d: GraphNode) => d.x.get)
+    .y((d: GraphNode) => d.y.get)
+
   /** Convert a Link into a Path */
   def lineData = (d: GraphLink) => line(js.Array(d.source, d.target))
 
@@ -94,6 +99,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
   def dragStart(d: GraphNode, i: Double) = {
     force.stop() // stops the force auto positioning before you start dragging
   }
+
   def dragMove(d: GraphNode, i: Double) = {
     val event = d3.event.asInstanceOf[DragEvent]
     d.px = d.px.fold(0.0)(_ + event.dx)
@@ -102,15 +108,18 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     d.y = d.y.fold(0.0)(_ + event.dy)
     tick() // this is the key to make it work together with updating both px,py,x,y on d !
   }
+
   def dragEnd(d: GraphNode, i: Double) = {
     d.fixed = d.fixed.fold(1.0)(_ => 1.0) // of course set the node to fixed so the force doesn't include the node in its auto positioning stuff
     tick()
     force.resume()
   }
+
   def displayName(meth: MethodNode) = {
     val r = new js.RegExp("(.*)\\(.*").exec(meth.displayName)
     meth.className + "." + r(1).get.split('$').last
   }
+
   def zoom(d: EventTarget, i: Double): Unit = {
     svgGroup.attr("transform", "translate(" + d3d.event.translate + ")scale(" + d3d.event.scale + ")")
   }
@@ -118,7 +127,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
   /**
     * Add a MethodNode to the graph
     *
-    * @param source the source of the link
+    * @param source  the source of the link
     * @param methods all the reachable methods from the source, grouped by className
     */
   def addMethods(source: GraphNode, methods: Map[String, Seq[String]]) = {
@@ -136,7 +145,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       * This function must not only look in the given class, but also in all its children.
       *
       * @param methodName the name of the method
-      * @param root the class in which we should look the method in
+      * @param root       the class in which we should look the method in
       */
     def addMethodNode(methodName: String, root: ClassNode) = {
       root.methods.find(_.encodedName == methodName) match {
@@ -170,7 +179,8 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       * @param methodName
       */
     def addLinkToGraph(node: ClassNode, methodName: String) = {
-      layer.nodes.find(_.data.encodedName == methodName) match { // Find the node in the graph
+      layer.nodes.find(_.data.encodedName == methodName) match {
+        // Find the node in the graph
         case Some(graphNode) => layer.links += GraphLink(source, graphNode)
         case None => addMethodNode(methodName, node)
       }
@@ -185,6 +195,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       }
     }
   }
+
   def click(n: GraphNode) = {
     if (!d3.event.asInstanceOf[dom.Event].defaultPrevented) {
       n.data match {
@@ -197,6 +208,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       dom.console.log("Clicked on: " + n.name)
     }
   }
+
   def contextMenu(n: GraphNode) = {
     val x = d3.event.asInstanceOf[dom.MouseEvent].clientX
     val y = d3.event.asInstanceOf[dom.MouseEvent].clientY
@@ -212,7 +224,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     force
       .nodes(ns)
       .links(ls)
-      .on("tick", (_:dom.Event) => tick())
+      .on("tick", (_: dom.Event) => tick())
       .start()
 
     link = link.data(ls) //TODO: manque un bout
@@ -243,6 +255,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       .text((n: GraphNode) => n.name)
 
   }
+
   def tick(): Unit = {
     text
       .attr("transform", (d: GraphNode) => "translate(" + d.x + "," + d.y + ")")
