@@ -5,7 +5,6 @@ import org.scalajs.dom.Event
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}
-import org.singlespaced.d3js.d3
 import upickle.{default => upickle}
 
 import scala.scalajs.js.Dynamic.{global => g}
@@ -39,10 +38,15 @@ object Visualization extends JSApp {
     fileInput.onchange = readFile(target) _
   }
 
-  def readFile(target: Div)(evt: sdom.Event) = {
-    evt.stopPropagation()
+
+  def updateHtmlAfterLoad(target: Div) = {
     target.innerHTML = ""
     target.appendChild(div(searchField, output, layersHTML, ContextMenu.nav).render)
+  }
+
+  def readFile(target: Div)(evt: sdom.Event) = {
+    evt.stopPropagation()
+    updateHtmlAfterLoad(target)
     val reader = new FileReader()
     reader.readAsText(fileInput.files(0))
     reader.onload = (e: sdom.UIEvent) => {
@@ -91,6 +95,7 @@ object Visualization extends JSApp {
     d3Graph = new D3Graph(callGraph, layers)
     d3Graph.update()
     showLayers
+    ContextMenu.hide
   })
 
 }

@@ -9,5 +9,5 @@ object Example extends JSApp {
 
   @JSExport
   def foo(i: Int): Unit =
-    println(s"Hello world! $i")
+    println("Hello world!" +  i)
 }
