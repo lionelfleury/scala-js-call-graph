@@ -6,13 +6,13 @@ val commonSettings: Seq[Setting[_]] = Seq(
   organization := "ch.epfl",
   version := "0.1.0-SNAPSHOT",
   scalacOptions ++= Seq(
-      "-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8"),
+    "-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8"),
   homepage := Some(url("https://github.com/lionelfleury/scala-js-call-graph")),
-  licenses += ("MIT", url("http://opensource.org/licenses/mit-license.php")),
+  licenses +=("MIT", url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(ScmInfo(
-      url("https://github.com/lionelfleury/scala-js-call-graph"),
-      "scm:git:git@github.com:lionelfleury/scala-js-call-graph",
-      Some("scm:git@github.com:lionelfleury/scala-js-call-graph.git"))),
+    url("https://github.com/lionelfleury/scala-js-call-graph"),
+    "scm:git:git@github.com:lionelfleury/scala-js-call-graph",
+    Some("scm:git@github.com:lionelfleury/scala-js-call-graph.git"))),
   publishMavenStyle := true
 )
 
@@ -20,8 +20,8 @@ lazy val `sbt-scalajs-callgraph-utils` =
   (crossProject in file("sbt-scalajs-callgraph-utils")).
     settings(commonSettings: _*).
     settings(
-      libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8",
-      crossScalaVersions := Seq("2.10.6", "2.11.8")
+      crossScalaVersions := Seq("2.10.6", "2.11.8"),
+      libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8"
     )
 
 lazy val utilsJS = `sbt-scalajs-callgraph-utils`.js
@@ -30,10 +30,11 @@ lazy val utilsJVM = `sbt-scalajs-callgraph-utils`.jvm
 lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
   settings(commonSettings: _*).
   settings(
+    scalaVersion := "2.10.6",
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
     libraryDependencies += "org.scala-js" %% "scalajs-tools" % scalaJSVersion
-  ).dependsOn(utilsJVM)
+  ).dependsOn(utilsJVM).aggregate(utilsJVM, utilsJS)
 
 val testSettings: Seq[Setting[_]] = commonSettings ++ Seq(
   testOptions +=
@@ -61,11 +62,17 @@ lazy val `scalajs-callgraph` = (project in file(".")).
       "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
       RuntimeDOM),
     jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox).
-      withMaterializer(new CustomFileMaterializer("index.html",   "file://" + file(".").getAbsolutePath + "/src/")),
+      withMaterializer(new CustomFileMaterializer("index.html", "file://" + file(".").getAbsolutePath + "/src/")),
     scalaJSStage in Global := FastOptStage,
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,
     persistLauncher in Test := false,
     publish := {},
-    publishLocal := {}).
+    publishLocal := {
+      "sbt sbt-scalajs-callgraph/publishLocal" +
+        " reload" +
+        " +sbt-scalajs-callgraph-utilsJS/publishLocal" +
+        " +sbt-scalajs-callgraph-utilsJVM/publishLocal" +
+        " scalajs-callgraph/fastOptJS" !
+    }).
   dependsOn(utilsJVM, utilsJS)
