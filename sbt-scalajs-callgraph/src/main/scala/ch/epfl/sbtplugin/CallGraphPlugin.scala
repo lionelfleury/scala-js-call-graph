@@ -1,5 +1,6 @@
 package ch.epfl.sbtplugin
 
+import org.scalajs.sbtplugin.ScalaJSPluginInternal.scalaJSLinker
 import org.scalajs.core.tools.linker._
 import org.scalajs.core.tools.linker.backend._
 import org.scalajs.core.tools.linker.frontend._
@@ -26,33 +27,20 @@ object CallGraphPlugin extends AutoPlugin {
     Seq(
       callgraph := {
         val log = streams.value.log
-
         val ir = (scalaJSIR in Compile).value.data
-        val linker = {
-          val opts = (scalaJSOptimizerOptions in Compile).value
-          val semantics = (scalaJSSemantics in Compile).value
-          val outputMode = (scalaJSOutputMode in Compile).value
-          val withSourceMap = (emitSourceMaps in Compile).value
+        val linker = (scalaJSLinker in Compile).value
+        val opts = (scalaJSOptimizerOptions in Compile).value
+        val semantics = linker.semantics
+        val outputMode = (scalaJSOutputMode in Compile).value
+        val withSourceMap = (emitSourceMaps in Compile).value
+        val backendConfig = LinkerBackend.Config()
+          .withCustomOutputWrapper(scalaJSOutputWrapper.value)
+          .withPrettyPrint(opts.prettyPrintFullOptJS)
+        val symbolRequirements =
+          new BasicLinkerBackend(semantics, outputMode, withSourceMap, backendConfig).symbolRequirements
 
-          val frontendConfig = LinkerFrontend.Config()
-            .withCheckIR(opts.checkScalaJSIR)
-
-          val backendConfig = LinkerBackend.Config()
-            .withCustomOutputWrapper(scalaJSOutputWrapper.value)
-            .withPrettyPrint(opts.prettyPrintFullOptJS)
-
-          val newLinker = { () =>
-            Linker(semantics, outputMode, withSourceMap, opts.disableOptimizer,
-              opts.parallel, opts.useClosureCompiler, frontendConfig,
-              backendConfig)
-          }
-
-          new ClearableLinker(newLinker, opts.batchMode)
-        }
-        // TODO : check for correct environment
-        val env = (resolvedJSEnv in Compile).value.asInstanceOf[LinkingUnitJSEnv]
-        val unit = linker.linkUnit(ir, env.symbolRequirements, log)
-        val mapInfos = unit.infos
+        val linkUnit = linker.linkUnit(ir, symbolRequirements, log)
+        val mapInfos = linkUnit.infos
 
         val graph = Graph.createFrom(mapInfos.values.toSeq)
         val file = crossTarget.value / "graph.json"
