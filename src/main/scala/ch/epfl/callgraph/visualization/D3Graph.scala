@@ -8,18 +8,13 @@ import org.singlespaced.d3js._
 import org.singlespaced.d3js.DragEvent
 
 import scala.collection._
-import scala.collection.immutable.Map
-import org.scalajs.dom.html.Div
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.util.matching.Regex
 
 object D3Graph {
 
-  case class GraphNode(name: String,
-                       group: Int,
-                       data: Node) extends forceModule.Node
+  case class GraphNode(name: String, group: Int, data: Node) extends forceModule.Node
 
   case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
 
@@ -39,20 +34,16 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
   val width: Double = 800
   val height: Double = 800
 
-  val force = d3.layout.force[GraphNode, GraphLink]()
-    .size((width, height))
-    .charge(-400)
-    .linkDistance(100)
+  var selectedNode: GraphNode = null
 
-  d3.select("#main").select("svg").remove()
-  val baseSvg: Selection[EventTarget] = d3.select("#main").append("svg")
+  // Init svg
+  val outer = d3.select("#main").append("svg:svg")
     .attr("width", width)
     .attr("height", height)
+    .attr("pointer-events", "all")
 
-  /**
-    * Add style (arrow) to the marker-end path
-    */
-  baseSvg.append("svg:defs").selectAll("marker")
+  // Arrow style for links
+  outer.append("svg:defs").selectAll("marker")
     .data(js.Array("end"))
     .enter().append("svg:marker")
     .attr("id", "end")
@@ -65,21 +56,34 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     .append("svg:path")
     .attr("d", "M0,-5L10,0L0,5")
 
-  val svgGroup: Selection[EventTarget] = baseSvg.append("g")
+  // rescale g
+  def rescale(d: dom.EventTarget, i: Double): Unit = {
+    if (selectedNode == null) {
+      val trans = d3d.event.translate
+      val scale = d3d.event.scale
+      vis.attr("transform", "translate(" + trans + ")" + " scale(" + scale + ")")
+    }
+  }
 
-  val zoomListener: js.Function =
-    d3.behavior.zoom[EventTarget]().scaleExtent((0.1, 3.0)).on("zoom", zoom _)
+  val vis = outer
+    .append("svg:g")
+    .call(d3.behavior.zoom().on("zoom", rescale _))
+    .on("dblclick.zoom", null)
+    .append("svg:g")
+    .on("mousedown", mouseDown _)
 
-  var link = svgGroup.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
-  var node = svgGroup.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
-  var text = svgGroup.selectAll[GraphNode]("text.label").data[GraphNode](js.Array[GraphNode]())
+  vis.append("svg:rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "white")
 
-  val node_drag = d3.behavior.drag[GraphNode]()
-    .on("dragstart", dragStart _)
-    .on("drag", dragMove _)
-    .on("dragend", dragEnd _)
-
-  var selectedNode: GraphNode = null
+  def mouseDown(d: dom.EventTarget) {
+    ContextMenu.hide
+    if (selectedNode == null) {
+      // allow panning if nothing is selected
+      vis.call(d3.behavior.zoom().on("zoom"), rescale _)
+    }
+  }
 
   /**
     * Layer related code
@@ -94,10 +98,39 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
   /** Convert a Link into a Path */
   def lineData = (d: GraphLink) => line(js.Array(d.source, d.target))
 
+
+  var link = vis.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
+  var node = vis.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
+  var text = vis.selectAll[GraphNode]("text.label").data[GraphNode](js.Array[GraphNode]())
+
+  def tick(e: dom.Event): Unit = {
+    text
+      .attr("transform", (d: GraphNode) => "translate(" + d.x + "," + d.y + ")")
+    link
+      .attr("d", lineData)
+    node
+      .attr("cx", (d: GraphNode) => d.x)
+      .attr("cy", (d: GraphNode) => d.y)
+  }
+
+  val force = d3.layout.force[GraphNode, GraphLink]()
+    .size((width, height))
+    .charge(-400)
+    .linkDistance(100)
+    .on("tick", tick _)
+
+
+  val node_drag = d3.behavior.drag[GraphNode]()
+    .on("dragstart", dragStart _)
+    .on("drag", dragMove _)
+    .on("dragend", dragEnd _)
+
+
   //d3d.behavior.zoom().scaleExtent(js.Array(0.1, 3.0)).on("zoom", zoom _).asInstanceOf[js.Function]
   //baseSvg.call(zoomListener) //TODO: redefine zoomListener
   def dragStart(d: GraphNode, i: Double) = {
     force.stop() // stops the force auto positioning before you start dragging
+    selectedNode = d
   }
 
   def dragMove(d: GraphNode, i: Double) = {
@@ -106,23 +139,24 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     d.py = d.py.fold(0.0)(_ + event.dy)
     d.x = d.x.fold(0.0)(_ + event.dx)
     d.y = d.y.fold(0.0)(_ + event.dy)
-    tick() // this is the key to make it work together with updating both px,py,x,y on d !
+    tick(null) // this is the key to make it work together with updating both px,py,x,y on d !
   }
 
   def dragEnd(d: GraphNode, i: Double) = {
     d.fixed = d.fixed.fold(1.0)(_ => 1.0) // of course set the node to fixed so the force doesn't include the node in its auto positioning stuff
-    tick()
+    selectedNode = null
     force.resume()
+    tick(null)
   }
 
-  def displayName(meth: MethodNode) = {
-    val r = new js.RegExp("(.*)\\(.*").exec(meth.displayName)
-    meth.className + "." + r(1).get.split('$').last
-  }
+  //  def displayName(meth: MethodNode) = {
+  //    val r = new js.RegExp("(.*)\\(.*").exec(meth.displayName)
+  //    meth.className + "." + r(1).get.split('$').last
+  //  }
 
-  def zoom(d: EventTarget, i: Double): Unit = {
-    svgGroup.attr("transform", "translate(" + d3d.event.translate + ")scale(" + d3d.event.scale + ")")
-  }
+  //  def zoom(d: EventTarget, i: Double): Unit = {
+  //    vis.attr("transform", "translate(" + d3d.event.translate + ")scale(" + d3d.event.scale + ")")
+  //  }
 
   /**
     * Add a MethodNode to the graph
@@ -130,7 +164,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     * @param source  the source of the link
     * @param methods all the reachable methods from the source, grouped by className
     */
-  def addMethods(source: GraphNode, methods: Map[String, Seq[String]]) = {
+  def addMethods(source: GraphNode, methods: immutable.Map[String, Seq[String]]) = {
 
     /**
       * Find all subclasses of a given ClassNode
@@ -167,7 +201,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       * @param methNode the MethodNode to convert
       */
     def addNodeToGraph(methNode: MethodNode) = {
-      val newNode = GraphNode(displayName(methNode), 5, methNode)
+      val newNode = GraphNode(methNode.className + "." + methNode.displayName, 5, methNode)
       layer.nodes += newNode
       layer.links += GraphLink(source, newNode)
     }
@@ -210,11 +244,10 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
   }
 
   def contextMenu(n: GraphNode) = {
-    val x = d3.event.asInstanceOf[dom.MouseEvent].clientX
-    val y = d3.event.asInstanceOf[dom.MouseEvent].clientY
-    ContextMenu.show(x, y)
-    d3.event.asInstanceOf[dom.MouseEvent].preventDefault()
     selectedNode = n
+    val mouseEvent = d3.event.asInstanceOf[dom.MouseEvent]
+    ContextMenu.show(mouseEvent.clientX, mouseEvent.clientY)
+    mouseEvent.preventDefault()
   }
 
   def update() {
@@ -224,7 +257,6 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     force
       .nodes(ns)
       .links(ls)
-      .on("tick", (_: dom.Event) => tick())
       .start()
 
     link = link.data(ls) //TODO: manque un bout
@@ -254,18 +286,10 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       .attr("dy", ".35em")
       .text((n: GraphNode) => n.name)
 
-  }
-
-  def tick(): Unit = {
-    text
-      .attr("transform", (d: GraphNode) => "translate(" + d.x + "," + d.y + ")")
-
-    link
-      .attr("d", lineData)
-
-    node
-      .attr("cx", (d: GraphNode) => d.x)
-      .attr("cy", (d: GraphNode) => d.y)
+    if (d3.event != null) {
+      // prevent browser's default behavior
+      d3.event.asInstanceOf[dom.Event].preventDefault()
+    }
   }
 
   def renderGraph(): Unit = {
@@ -273,7 +297,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
       val node = GraphNode(n.displayName, 0, n)
       layer.nodes += node
       for (m <- n.methods.toSeq) {
-        val target = GraphNode(displayName(m), 1, m)
+        val target = GraphNode(n.displayName + "." + m.displayName, 1, m)
         layer.nodes += target
         layer.links += GraphLink(node, target)
       }
