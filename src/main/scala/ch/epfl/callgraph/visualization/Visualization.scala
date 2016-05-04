@@ -103,7 +103,7 @@ object Visualization extends JSApp {
     d3Graph = new D3Graph(callGraph, layers)
     d3Graph.update()
     showLayers
-    ContextMenu.hide
+    ContextMenu.hide()
   })
 
 }

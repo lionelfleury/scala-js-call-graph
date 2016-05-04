@@ -41,7 +41,7 @@ object ContextMenu {
     nav.setAttribute("style", "left:" +  x + unit + " ;top:" + y + unit)
   }
 
-  def hide = nav.setAttribute("class", "context-menu")
+  def hide() = nav.setAttribute("class", "context-menu")
 
   /**
     * Context menu actions callback
