@@ -41,14 +41,13 @@ object ContextMenu {
     nav.setAttribute("style", "left:" +  x + unit + " ;top:" + y + unit)
   }
 
-  def hide() = nav.setAttribute("class", "context-menu")
+  def hide(): Unit = nav.setAttribute("class", "context-menu")
 
   /**
     * Context menu actions callback
     */
-  def setNewLayerCallback(f: (Event) => Unit) = newLayerLink.onclick = f
-  def setExpandCallback(f: (Event) => Unit) = expandLink.onclick = f
-  def setHideCallback(f: (Event) => Unit) = hideLink.onclick = f
-
+  def setNewLayerCallback(f: Event => Unit) = newLayerLink.onclick = f
+  def setExpandCallback(f: Event => Unit) = expandLink.onclick = f
+  def setHideCallback(f: Event => Unit) = hideLink.onclick = f
 
 }

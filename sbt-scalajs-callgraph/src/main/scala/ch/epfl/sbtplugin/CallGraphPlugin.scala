@@ -29,15 +29,11 @@ object CallGraphPlugin extends AutoPlugin {
         val log = streams.value.log
         val ir = (scalaJSIR in Compile).value.data
         val linker = (scalaJSLinker in Compile).value
-        val opts = (scalaJSOptimizerOptions in Compile).value
-        val semantics = linker.semantics
         val outputMode = (scalaJSOutputMode in Compile).value
         val withSourceMap = (emitSourceMaps in Compile).value
         val backendConfig = LinkerBackend.Config()
-          .withCustomOutputWrapper(scalaJSOutputWrapper.value)
-          .withPrettyPrint(opts.prettyPrintFullOptJS)
         val symbolRequirements =
-          new BasicLinkerBackend(semantics, outputMode, withSourceMap, backendConfig).symbolRequirements
+          new BasicLinkerBackend(linker.semantics, outputMode, withSourceMap, backendConfig).symbolRequirements
 
         val linkUnit = linker.linkUnit(ir, symbolRequirements, log)
         val mapInfos = linkUnit.infos

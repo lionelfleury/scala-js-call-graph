@@ -14,11 +14,7 @@ import scalatags.JsDom.all._
 object Visualization extends JSApp {
   var callGraph: CallGraph = null
   var d3Graph: D3Graph = null
-  val layers: Layers = new Layers(() => {
-    d3Graph = new D3Graph(callGraph, layers)
-    d3Graph.update()
-    showLayers
-  })
+  val layers: Layers = new Layers()
 
 
   val fileInput = input(`type` := "file").render
@@ -99,7 +95,7 @@ object Visualization extends JSApp {
    */
   ContextMenu.setNewLayerCallback((e: Event) => {
     layers.addLayer()
-    layers.last.nodes += d3Graph.selectedNode
+    layers.last.nodes += d3Graph.selectedNode.fold(sys.error("selected node is not defined!"))(identity)
     d3Graph = new D3Graph(callGraph, layers)
     d3Graph.update()
     showLayers
