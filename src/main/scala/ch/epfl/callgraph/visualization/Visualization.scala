@@ -67,15 +67,17 @@ object Visualization extends JSApp {
   //  }
 
   def renderList = {
-    def exp(node: Node) = if (exported.checked) node.isExported else true
+    def exp(node: Node): Boolean = !exported.checked || node.isExported
     val list = methods.checked match {
       case true => for (c <- callGraph.classes.toSeq; m <- c.methods; if exp(m)) yield Decoder.decodeMethod(c.encodedName, m.encodedName)
       case _ => for (c <- callGraph.classes.toSeq; if exp(c)) yield Decoder.decodeClass(c.encodedName)
     }
+    val search = box.value.toLowerCase
     ul(
       for {
         s <- list
-        if s.toLowerCase.contains(box.value.toLowerCase)
+        s1 = if (search.contains(".")) search.toLowerCase.split('.') else Array(search.toLowerCase)
+        if s.toLowerCase.contains(s1(0)) && s.toLowerCase.contains(s1(s1.length - 1))
       } yield li(s)
     ).render
   }
