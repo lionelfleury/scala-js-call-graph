@@ -1,9 +1,9 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.{CallGraph, Node}
+import org.scalajs.dom.html.Div
+import org.scalajs.dom.raw.{FileReader, HTMLLIElement}
 import org.scalajs.{dom => sdom}
-import sdom.html.Div
-import sdom.raw.{FileReader, HTMLLIElement}
 import upickle.{default => upickle}
 
 import scala.scalajs.js.Dynamic.{global => g}
@@ -53,7 +53,7 @@ object Visualization extends JSApp {
 
   def view = (e: sdom.MouseEvent) => {
     val text = e.target.valueOf().asInstanceOf[HTMLLIElement].innerHTML
-    D3Graph.getCallGraph().classes.find(n => Decoder.decodeClass(n.encodedName) == text) match {
+    D3Graph.getCallGraph.classes.find(n => Decoder.decodeClass(n.encodedName) == text) match {
       case None => g.alert("Not found")
       case Some(n) => g.alert(s"Found: ${n.encodedName}")
     }
@@ -62,8 +62,8 @@ object Visualization extends JSApp {
   def renderList = {
     def exp(node: Node): Boolean = !exported.checked || node.isExported
     val list = methods.checked match {
-      case true => for (c <- D3Graph.getCallGraph().classes.toSeq; m <- c.methods; if exp(m)) yield Decoder.decodeMethod(c.encodedName, m.encodedName)
-      case _ => for (c <- D3Graph.getCallGraph().classes.toSeq; if exp(c)) yield Decoder.decodeClass(c.encodedName)
+      case true => for (c <- D3Graph.getCallGraph.classes.toSeq; m <- c.methods; if exp(m)) yield Decoder.decodeMethod(c.encodedName, m.encodedName)
+      case _ => for (c <- D3Graph.getCallGraph.classes.toSeq; if exp(c)) yield Decoder.decodeClass(c.encodedName)
     }
     val search = box.value.toLowerCase
     ul(
@@ -84,16 +84,5 @@ object Visualization extends JSApp {
     layersHTML.innerHTML = ""
     layersHTML.appendChild(Layers.toHTMLList)
   }
-
-  /*
-      Context menu callbacks
-   */
-  ContextMenu.setNewLayerCallback((e: sdom.Event) => {
-    Layers.addLayer()
-    Layers.last().nodes += D3Graph.selectedNode.get // TODO: check if really defined
-    D3Graph.update()
-    showLayers()
-    ContextMenu.hide()
-  })
 
 }
