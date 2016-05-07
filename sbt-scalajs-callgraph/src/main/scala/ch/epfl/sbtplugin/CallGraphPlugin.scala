@@ -1,12 +1,9 @@
 package ch.epfl.sbtplugin
 
-import org.scalajs.sbtplugin.ScalaJSPluginInternal.scalaJSLinker
-import org.scalajs.core.tools.linker._
 import org.scalajs.core.tools.linker.backend._
-import org.scalajs.core.tools.linker.frontend._
-import org.scalajs.jsenv._
 import org.scalajs.sbtplugin.Implicits._
 import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.scalajs.sbtplugin.ScalaJSPluginInternal.scalaJSLinker
 import sbt.Keys._
 import sbt._
 
@@ -39,9 +36,14 @@ object CallGraphPlugin extends AutoPlugin {
         val mapInfos = linkUnit.infos
 
         val graph = Graph.createFrom(mapInfos.values.toSeq)
-        val file = crossTarget.value / "graph.json"
-        Graph.writeToFile(graph, file)
-        log.info(s"callgraph created in $file")
+
+        val jsonFile = crossTarget.value / "graph.json"
+        Graph.writeToFile(graph, jsonFile)
+        log.info(s"CallGraph file created in $jsonFile")
+
+        val htmlFile = crossTarget.value / "index.html"
+        HTMLFile.writeToFile(htmlFile)
+        log.info(s"HTML file created in $htmlFile")
       }
     )
   }
