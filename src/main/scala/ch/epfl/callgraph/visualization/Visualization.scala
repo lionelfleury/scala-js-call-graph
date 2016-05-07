@@ -11,11 +11,6 @@ import scala.scalajs.js.JSApp
 import scalatags.JsDom.all._
 
 object Visualization extends JSApp {
-  var callGraph: CallGraph = null
-  var d3Graph: D3Graph = null
-  val layers: Layers = new Layers()
-
-
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here to search !").render
   val exported = input(`type` := "checkbox", checked).render
@@ -48,28 +43,27 @@ object Visualization extends JSApp {
     reader.readAsText(fileInput.files(0))
     reader.onload = (e: sdom.UIEvent) => {
       val text = reader.result.asInstanceOf[String]
-      callGraph = upickle.read[CallGraph](text)
-
+      val callGraph = upickle.read[CallGraph](text)
       searchList(e)
-      d3Graph = new D3Graph(callGraph, layers)
-      d3Graph.renderGraph()
-      showLayers
+      D3Graph.setCallGraph(callGraph)
+      D3Graph.renderGraph()
+      showLayers()
     }
   }
 
-    def view = (e: sdom.MouseEvent) => {
-      val text = e.target.valueOf().asInstanceOf[HTMLLIElement].innerHTML
-      callGraph.classes.find(n => Decoder.decodeClass(n.encodedName) == text) match {
-        case None => g.alert("Not found")
-        case Some(n) => g.alert(s"Found: ${n.encodedName}")
-      }
+  def view = (e: sdom.MouseEvent) => {
+    val text = e.target.valueOf().asInstanceOf[HTMLLIElement].innerHTML
+    D3Graph.getCallGraph().classes.find(n => Decoder.decodeClass(n.encodedName) == text) match {
+      case None => g.alert("Not found")
+      case Some(n) => g.alert(s"Found: ${n.encodedName}")
     }
+  }
 
   def renderList = {
     def exp(node: Node): Boolean = !exported.checked || node.isExported
     val list = methods.checked match {
-      case true => for (c <- callGraph.classes.toSeq; m <- c.methods; if exp(m)) yield Decoder.decodeMethod(c.encodedName, m.encodedName)
-      case _ => for (c <- callGraph.classes.toSeq; if exp(c)) yield Decoder.decodeClass(c.encodedName)
+      case true => for (c <- D3Graph.getCallGraph().classes.toSeq; m <- c.methods; if exp(m)) yield Decoder.decodeMethod(c.encodedName, m.encodedName)
+      case _ => for (c <- D3Graph.getCallGraph().classes.toSeq; if exp(c)) yield Decoder.decodeClass(c.encodedName)
     }
     val search = box.value.toLowerCase
     ul(
@@ -77,7 +71,7 @@ object Visualization extends JSApp {
         s <- list
         s1 = if (search.contains(".")) search.toLowerCase.split('.') else Array(search.toLowerCase)
         if s.toLowerCase.contains(s1(0)) && s.toLowerCase.contains(s1(s1.length - 1))
-      } yield li(s,  onclick := view)
+      } yield li(s, onclick := view)
     ).render
   }
 
@@ -86,20 +80,19 @@ object Visualization extends JSApp {
     output.appendChild(renderList)
   }
 
-  def showLayers: Unit = {
+  def showLayers(): Unit = {
     layersHTML.innerHTML = ""
-    layersHTML.appendChild(layers.toHTMLList)
+    layersHTML.appendChild(Layers.toHTMLList)
   }
 
   /*
       Context menu callbacks
    */
   ContextMenu.setNewLayerCallback((e: sdom.Event) => {
-    layers.addLayer()
-    layers.last.nodes += d3Graph.selectedNode.fold(sys.error("selected node is not defined!"))(identity)
-    d3Graph = new D3Graph(callGraph, layers)
-    d3Graph.update()
-    showLayers
+    Layers.addLayer()
+    Layers.last().nodes += D3Graph.selectedNode.get // TODO: check if really defined
+    D3Graph.update()
+    showLayers()
     ContextMenu.hide()
   })
 

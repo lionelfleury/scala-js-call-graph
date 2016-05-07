@@ -11,19 +11,20 @@ import scala.collection._
 import scala.scalajs.js
 import js.JSConverters._
 
-object D3Graph {
-  case class GraphNode(displayName: String, group: Int, data: Node) extends forceModule.Node
-  case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
-}
-
 /**
   * A D3JS class modeling our graph.
   * Each node has a name, and a group, as well as data, which points to the actual Utils.Node containing the
   * relevant information.
   */
-class D3Graph(callGraph: CallGraph, layers: Layers) {
+object D3Graph {
 
-  import D3Graph._
+  private var callGraph: CallGraph = CallGraph(Set.empty[ClassNode])
+
+  def setCallGraph(callGraph: CallGraph) = this.callGraph = callGraph
+  def getCallGraph(): CallGraph = callGraph
+
+  case class GraphNode(displayName: String, group: Int, data: Node) extends forceModule.Node
+  case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
 
   val d3d = js.Dynamic.global.d3
   // For dynamic operations (when the binder (d3js) doesn't know)
@@ -77,7 +78,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     .linkDistance(100)
 
   // Layer code
-  def layer = layers.current
+  def layer = Layers.current()
 
   // Transform a line to a Path
   def line: Line[GraphNode] = d3.svg.line()

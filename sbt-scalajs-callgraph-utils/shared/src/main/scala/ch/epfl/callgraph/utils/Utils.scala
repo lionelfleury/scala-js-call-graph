@@ -93,5 +93,5 @@ object Utils {
     }
   }
 
-  final case class CallGraph(classes: Set[ClassNode])
+  final case class CallGraph(classes: collection.Set[ClassNode])
 }
