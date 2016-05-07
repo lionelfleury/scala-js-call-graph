@@ -49,9 +49,9 @@ class Layers {
   }
 
   def toHTMLList = ul(
-    for (layer <- layers.zipWithIndex) yield {
-      val active = if (layer._2 == selected) "active" else "inactive"
-      li()(a(href := "", onclick := changeLayer, `class` := active, data.number := layer._2)(layer._1.name))
+    for ((layer, index) <- layers.zipWithIndex) yield {
+      val active = if (index == selected) "active" else "inactive"
+      li()(a(href := "", onclick := changeLayer, `class` := active, data.number := index)(layer.name))
     }
   ).render
 

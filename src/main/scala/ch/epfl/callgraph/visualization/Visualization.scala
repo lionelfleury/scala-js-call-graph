@@ -1,10 +1,9 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.{CallGraph, Node}
-import org.scalajs.dom.Event
-import org.scalajs.dom.html.Div
-import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}
+import sdom.html.Div
+import sdom.raw.{FileReader, HTMLLIElement}
 import upickle.{default => upickle}
 
 import scala.scalajs.js.Dynamic.{global => g}
@@ -58,13 +57,13 @@ object Visualization extends JSApp {
     }
   }
 
-  //  def view(evt: sdom.MouseEvent) = {
-  //    val text = evt.srcElement.textContent
-  //    callGraph.classes.find(n => n.displayName == text) match {
-  //      case None => g.alert("Not found")
-  //      case Some(n) => g.alert("Methods called: " + n.asInstanceOf[MethodNode].methodsCalled.mkString(";"))
-  //    }
-  //  }
+    def view = (e: sdom.MouseEvent) => {
+      val text = e.target.valueOf().asInstanceOf[HTMLLIElement].innerHTML
+      callGraph.classes.find(n => Decoder.decodeClass(n.encodedName) == text) match {
+        case None => g.alert("Not found")
+        case Some(n) => g.alert(s"Found: ${n.encodedName}")
+      }
+    }
 
   def renderList = {
     def exp(node: Node): Boolean = !exported.checked || node.isExported
@@ -78,7 +77,7 @@ object Visualization extends JSApp {
         s <- list
         s1 = if (search.contains(".")) search.toLowerCase.split('.') else Array(search.toLowerCase)
         if s.toLowerCase.contains(s1(0)) && s.toLowerCase.contains(s1(s1.length - 1))
-      } yield li(s)
+      } yield li(s,  onclick := view)
     ).render
   }
 
@@ -95,7 +94,7 @@ object Visualization extends JSApp {
   /*
       Context menu callbacks
    */
-  ContextMenu.setNewLayerCallback((e: Event) => {
+  ContextMenu.setNewLayerCallback((e: sdom.Event) => {
     layers.addLayer()
     layers.last.nodes += d3Graph.selectedNode.fold(sys.error("selected node is not defined!"))(identity)
     d3Graph = new D3Graph(callGraph, layers)
