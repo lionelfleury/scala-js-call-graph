@@ -12,11 +12,8 @@ import scala.scalajs.js
 import js.JSConverters._
 
 object D3Graph {
-
-  case class GraphNode(name: String, group: Int, data: Node) extends forceModule.Node
-
+  case class GraphNode(displayName: String, group: Int, data: Node) extends forceModule.Node
   case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
-
 }
 
 /**
@@ -162,11 +159,9 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     /**
       * Create a new GraphNode from a MethodNode, and add it to the graph with a link.
       * Link it with the given source
-      *
-      * @param methNode the MethodNode to convert
-      */
-    def addNodeToGraph(classNode: ClassNode, methNode: MethodNode) = {
-      val newNode = GraphNode(classNode.displayName + "." + methNode.displayName, 5, methNode)
+*/
+    def addNodeToGraph(classNode: ClassNode, methodNode: MethodNode) = {
+      val newNode = GraphNode(Decoder.decodeMethod(classNode.encodedName, methodNode.encodedName), 5, methodNode)
       layer.nodes += newNode
       layer.links += GraphLink(source, newNode)
     }
@@ -228,7 +223,7 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
     node.append("text")
       .attr("dx", 10)
       .attr("dy", ".35em")
-      .text((n: GraphNode) => n.name)
+      .text((n: GraphNode) => n.displayName)
 
     force
       .nodes(nodes)
@@ -271,10 +266,10 @@ class D3Graph(callGraph: CallGraph, layers: Layers) {
 
   def renderGraph(): Unit = {
     for (n <- callGraph.classes.filter(_.isExported)) {
-      val node = GraphNode(n.displayName, 0, n)
+      val node = GraphNode(Decoder.decodeClass(n.encodedName), 0, n)
       layer.nodes += node
       for (m <- n.methods.toSeq) {
-        val target = GraphNode(n.displayName + "." + m.displayName, 1, m)
+        val target = GraphNode(Decoder.decodeMethod(n.encodedName, m.encodedName), 1, m)
         layer.nodes += target
         layer.links += GraphLink(node, target)
       }

@@ -7,21 +7,21 @@ object Utils {
 
   sealed trait Node {
     val encodedName: String
-    val displayName: String
+//    val displayName: String
     val isExported: Boolean
   }
 
-  @key("Method")
+  @key("M")
   case class MethodNode(encodedName: String,
-                        displayName: String,
+//                        displayName: String,
                         isExported: Boolean,
                         className:  String,
                         methodsCalled: Map[String, List[String]],
                         instantiatedClasses: List[String]) extends Node
 
-  @key("Class")
+  @key("C")
   case class ClassNode(encodedName: String,
-                       displayName: String,
+//                       displayName: String,
                        isExported: Boolean,
                        superClass: Option[String],
                        interfaces: Seq[String],
@@ -38,24 +38,24 @@ object Utils {
   object MethodNode {
     implicit val methodNodeWriter = upickle.default.Writer[MethodNode] {
       case t => Js.Obj(
-        ("encodedName", Js.Str(t.encodedName)),
-        ("displayName", Js.Str(t.displayName)),
-        ("isExported", upickle.default.writeJs[Boolean](t.isExported)),
-        ("className", Js.Str(t.className)),
-        ("methodsCalled", upickle.default.writeJs(t.methodsCalled)),
-        ("instantiatedClasses", upickle.default.writeJs(t.instantiatedClasses))
+        ("e", Js.Str(t.encodedName)),
+//        ("displayName", Js.Str(t.displayName)),
+        ("i", upickle.default.writeJs[Boolean](t.isExported)),
+        ("c", Js.Str(t.className)),
+        ("m", upickle.default.writeJs(t.methodsCalled)),
+        ("ic", upickle.default.writeJs(t.instantiatedClasses))
       )
     }
     implicit val methodNodeReader = upickle.default.Reader[MethodNode] {
       case Js.Obj(
       (_, encodedName),
-      (_, displayName),
+//      (_, displayName),
       (_, isExported),
       (_, className),
       (_, methodsCalled),
       (_, instantiatedClasses)
       ) => new MethodNode(upickle.default.readJs[String](encodedName),
-        upickle.default.readJs[String](displayName),
+//        upickle.default.readJs[String](displayName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[String](className),
         upickle.default.readJs[Map[String, List[String]]](methodsCalled),
@@ -67,24 +67,24 @@ object Utils {
   object ClassNode {
     implicit val methodNodeWriter = upickle.default.Writer[ClassNode] {
       case t => Js.Obj(
-        ("encodedName", Js.Str(t.encodedName)),
-        ("displayName", Js.Str(t.displayName)),
-        ("isExported", upickle.default.writeJs[Boolean](t.isExported)),
-        ("superClass", upickle.default.writeJs[Option[String]](t.superClass)),
-        ("interfaces", upickle.default.writeJs[Seq[String]](t.interfaces)),
-        ("methods", upickle.default.writeJs[Set[MethodNode]](t.methods))
+        ("e", Js.Str(t.encodedName)),
+//        ("displayName", Js.Str(t.displayName)),
+        ("i", upickle.default.writeJs[Boolean](t.isExported)),
+        ("s", upickle.default.writeJs[Option[String]](t.superClass)),
+        ("in", upickle.default.writeJs[Seq[String]](t.interfaces)),
+        ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
       )
     }
     implicit val methodNodeReader = upickle.default.Reader[ClassNode] {
       case Js.Obj(
       (_, encodedName),
-      (_, displayName),
+//      (_, displayName),
       (_, isExported),
       (_, superClass),
       (_, interfaces),
       (_, methods)
       ) => new ClassNode(upickle.default.readJs[String](encodedName),
-        upickle.default.readJs[String](displayName),
+//        upickle.default.readJs[String](displayName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Option[String]](superClass),
         upickle.default.readJs[Seq[String]](interfaces),

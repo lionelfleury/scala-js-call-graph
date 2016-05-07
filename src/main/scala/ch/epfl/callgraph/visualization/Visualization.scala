@@ -69,8 +69,8 @@ object Visualization extends JSApp {
   def renderList = {
     def exp(node: Node) = if (exported.checked) node.isExported else true
     val list = methods.checked match {
-      case true => for (c <- callGraph.classes.toSeq; m <- c.methods; if exp(m)) yield c.displayName + "." + m.displayName
-      case _ => for (c <- callGraph.classes.toSeq; if exp(c)) yield c.displayName
+      case true => for (c <- callGraph.classes.toSeq; m <- c.methods; if exp(m)) yield Decoder.decodeMethod(c.encodedName, m.encodedName)
+      case _ => for (c <- callGraph.classes.toSeq; if exp(c)) yield Decoder.decodeClass(c.encodedName)
     }
     ul(
       for {
