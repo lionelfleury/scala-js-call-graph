@@ -61,8 +61,7 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
       RuntimeDOM),
-    jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox).
-      withMaterializer(new CustomFileMaterializer("index.html", "file://" + file(".").getAbsolutePath + "/src/")),
+    jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox),
     scalaJSStage in Global := FastOptStage,
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,

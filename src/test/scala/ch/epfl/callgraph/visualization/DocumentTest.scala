@@ -24,11 +24,9 @@ class DocumentTest {
           "<div id=\"nav\" style=\"overflow:auto\"></div>" +
           "<div id=\"main\" style=\"overflow:auto\"></div>"))
     Visualization.main() // setup the file upload button
-    Visualization.callGraph = upickle.read[CallGraph](generateGraph)
-    Visualization.d3Graph = new D3Graph(Visualization.callGraph, Visualization.layers)
+    D3Graph.setCallGraph(upickle.read[CallGraph](generateGraph))
     Visualization.updateHtmlAfterLoad(sdom.document.getElementById("nav").asInstanceOf[Div])
-    Visualization.d3Graph.renderGraph()
-
+    D3Graph.renderGraph()
   }
 
   def generateGraph = {
