@@ -13,19 +13,35 @@ object Graph {
     new ClassNode(ci.encodedName, ci.isExported, ci.superClass, ci.interfaces, methods)
   }
 
-  private def toMethodNode(ci: ClassInfo, mi: MethodInfo): MethodNode = {
+  private def toMethodNode(ci: ClassInfo, mi: MethodInfo, calledFrom: Map[String, List[String]]): MethodNode = {
     val methods = mi.methodsCalled ++ mi.methodsCalledStatically ++ mi.staticMethodsCalled
-    new MethodNode(mi.encodedName, mi.isExported, ci.encodedName, methods, mi.instantiatedClasses)
+    new MethodNode(mi.encodedName, mi.isExported, ci.encodedName, methods, calledFrom, mi.instantiatedClasses)
   }
 
   def createFrom(classInfos: Seq[ClassInfo]): CallGraph = {
     val classes = mutable.Set[ClassNode]()
 
-    for (classInfo <- classInfos) {
-      val methods = classInfo.methods.map(toMethodNode(classInfo, _))
-      classes += toClassNode(classInfo, methods.toSet)
+    val called = mutable.Map[String, mutable.Map[String, mutable.Set[String]]]()
+
+    for {
+      ci <- classInfos
+      mi <- ci.methods
+      (className, methodNames) <- mi.methodsCalled ++ mi.methodsCalledStatically ++ mi.staticMethodsCalled
+      methodName <- methodNames
+    } {
+      val calledMap = called.getOrElseUpdate(className + methodName, mutable.Map[String, mutable.Set[String]]())
+      val calledList = calledMap.getOrElseUpdate(ci.encodedName, mutable.Set[String]())
+      calledList.add(mi.encodedName)
     }
 
+    for (ci <- classInfos) {
+      val methods = ci.methods.foldLeft(Set[MethodNode]()) { case (acc, mi) =>
+        val cf = called.getOrElse(ci.encodedName + mi.encodedName, Map.empty)
+        acc + toMethodNode(ci, mi, cf.mapValues(_.toList).toMap)
+      }
+      classes += toClassNode(ci, methods)
+    }
+    called.clear()
     CallGraph(classes.toSet)
   }
 

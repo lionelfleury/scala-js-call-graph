@@ -15,6 +15,7 @@ object Utils {
                               isExported: Boolean,
                               className: String,
                               methodsCalled: Map[String, List[String]],
+                              calledFrom: Map[String, List[String]],
                               instantiatedClasses: List[String]) extends Node
 
   @key("C")
@@ -40,6 +41,7 @@ object Utils {
         ("i", upickle.default.writeJs[Boolean](t.isExported)),
         ("c", Js.Str(t.className)),
         ("m", upickle.default.writeJs(t.methodsCalled)),
+        ("cf", upickle.default.writeJs(t.calledFrom)),
         ("ic", upickle.default.writeJs(t.instantiatedClasses))
       )
     }
@@ -49,11 +51,13 @@ object Utils {
       (_, isExported),
       (_, className),
       (_, methodsCalled),
+      (_, calledFrom),
       (_, instantiatedClasses)
       ) => new MethodNode(upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[String](className),
         upickle.default.readJs[Map[String, List[String]]](methodsCalled),
+        upickle.default.readJs[Map[String, List[String]]](calledFrom),
         upickle.default.readJs[List[String]](instantiatedClasses)
       )
     }
