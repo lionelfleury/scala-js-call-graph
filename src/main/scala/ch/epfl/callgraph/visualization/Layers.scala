@@ -1,9 +1,13 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode}
+import org.scalajs.dom
+import org.scalajs.dom.html.Select
+import org.scalajs.dom.raw.{HTMLElement, HTMLSelectElement}
 import org.scalajs.dom.{MouseEvent, console}
 
 import scala.collection.mutable
+import scala.scalajs.js.ThisFunction
 import scalatags.JsDom.all._
 
 
@@ -81,7 +85,7 @@ final case class Layer(name: String) {
 }
 
 object Layers {
-  private var selected = 0
+  private var s = 0
   private val layers = mutable.ArrayBuffer[Layer]()
 
   def addLayer(name: String = "layer" + (layers.size + 1)): Layer = {
@@ -91,23 +95,23 @@ object Layers {
 
   def current(): Layer = layers.size match {
     case 0 => addLayer()
-    case _ => layers(selected)
+    case _ => layers(s)
   }
 
   private def next(): Layer = {
-    if (selected < layers.size - 1)
-      selected += 1
+    if (s < layers.size - 1)
+      s += 1
     current()
   }
 
   private def previous(): Layer = {
-    if (selected > 0) selected -= 1
+    if (s > 0) s -= 1
     current()
   }
 
   private def setCurrent(i: Int): Unit = {
-    if (i != selected && i >= 0 && i < layers.size) {
-      selected = i
+    if (i != s && i >= 0 && i < layers.size) {
+      s = i
     }
   }
 
@@ -116,14 +120,18 @@ object Layers {
     current()
   }
 
-  def toHTMLList = ul(
-    for ((layer, index) <- layers.zipWithIndex; active = if (index == selected) "active" else "inactive") yield
-      li()(a(href := "", onclick := changeLayer(index), `class` := active)(layer.name))
-  ).render
+  def toHTMLList = select(
+    for ((layer, index) <- layers.zipWithIndex) yield {
+      if(s == index)
+        option(selected := true, value := index)(a(href := "")(layer.name))
+      else // set selected to false does not work in chrome ! Only one option should have the selected tag
+        option(value := index)(a(href := "")(layer.name))
+    }
+  , onchange := changeLayer).render
 
-  private def changeLayer(index: Int) = (e: MouseEvent) => {
-    e.preventDefault()
-    setCurrent(index)
+  private def changeLayer : ThisFunction = (select: HTMLSelectElement) => {
+    s = select.selectedIndex
+    setCurrent(s)
     D3Graph.update()
     Visualization.showLayers()
   }
