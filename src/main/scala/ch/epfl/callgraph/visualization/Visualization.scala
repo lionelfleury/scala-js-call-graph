@@ -1,6 +1,7 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.{CallGraph, ClassNode, MethodNode, Node}
+import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.{FileReader, HTMLLIElement}
 import org.scalajs.{dom => sdom}
@@ -20,7 +21,7 @@ object Visualization extends JSApp {
 
   val searchField = div(box, div(" Only exported:", exported), div(" Methods:", methods)).render
 
-  box.onkeyup = searchList _
+  box.onkeyup = (e: KeyboardEvent) => if (e.keyCode == 13) searchList(e)
   exported.onclick = searchList _
   methods.onclick = searchList _
 
@@ -51,18 +52,20 @@ object Visualization extends JSApp {
     }
   }
 
-  def loop(cn: String, mn: String, target: GraphNode): Unit = {
+  def loop(target: GraphNode): Unit = {
     val classes = D3Graph.getCallGraph.classes
     target.data match {
       case mi: MethodNode =>
         for ((cc, mcs) <- mi.calledFrom; mc <- mcs) {
-          val mn = classes.find(_.encodedName == cc).flatMap(_.methods.find(_.encodedName == mc))
-          if (mn.isDefined) {
-            val node = GraphNode(Decoder.decodeMethod(cc, mc), 1, mn.get)
+          val cns = classes.filter(c => c.encodedName == cc || c.superClass.fold(false)(_ == cc))
+          val mns = cns.flatMap(_.methods.filter(_.encodedName == mc))
+          if (mi.encodedName.contains("printString")) println(mi.encodedName + " " + mns.toList)
+          for (mn <- mns) {
+            val node = GraphNode(Decoder.decodeMethod(cc, mc), 1, mn)
             if (Layers.current().nodes.add(node)) {
               val link = GraphLink(node, target)
               Layers.current().links.add(link)
-              loop(cc, mc, node)
+              loop(node)
             }
           }
         }
@@ -83,7 +86,7 @@ object Visualization extends JSApp {
       val classNode = GraphNode(Decoder.decodeMethod(className, methodName), 1, mNode)
       Layers.addLayer()
       Layers.current().nodes += classNode
-      loop(className, methodName, classNode)
+      loop(classNode)
       D3Graph.update()
       Visualization.showLayers()
     } else if (as.length == 1) {

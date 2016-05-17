@@ -19,9 +19,9 @@ object Graph {
   }
 
   def createFrom(classInfos: Seq[ClassInfo]): CallGraph = {
-    val classes = mutable.Set[ClassNode]()
+    val classes = new mutable.HashSet[ClassNode]()
 
-    val called = mutable.Map[String, mutable.Map[String, mutable.Set[String]]]()
+    val called = new mutable.HashMap[String, mutable.HashMap[String, mutable.HashSet[String]]]()
 
     for {
       ci <- classInfos
@@ -29,8 +29,8 @@ object Graph {
       (className, methodNames) <- mi.methodsCalled ++ mi.methodsCalledStatically ++ mi.staticMethodsCalled
       methodName <- methodNames
     } {
-      val calledMap = called.getOrElseUpdate(className + methodName, mutable.Map[String, mutable.Set[String]]())
-      val calledList = calledMap.getOrElseUpdate(ci.encodedName, mutable.Set[String]())
+      val calledMap = called.getOrElseUpdate(className + methodName, new mutable.HashMap[String, mutable.HashSet[String]]())
+      val calledList = calledMap.getOrElseUpdate(ci.encodedName, new mutable.HashSet[String]())
       calledList.add(mi.encodedName)
     }
 

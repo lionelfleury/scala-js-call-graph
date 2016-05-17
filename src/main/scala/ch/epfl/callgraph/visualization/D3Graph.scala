@@ -142,7 +142,10 @@ object D3Graph {
 
     // NB: the function arg is crucial here! nodes are not known by index!
     node.exit().remove()
-    node = node.data(nodes, (d: GraphNode) => d.data.encodedName)
+    node = node.data(nodes, (d: GraphNode) => d.data match {
+      case mn: MethodNode => mn.className + mn.encodedName
+      case cn: ClassNode => cn.encodedName
+    })
     node.enter().append("g")
       .attr("class", "node")
       .on("click", click _) // TODO: change for something like dblclick
