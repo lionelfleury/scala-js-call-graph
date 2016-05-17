@@ -3,101 +3,90 @@ package ch.epfl.callgraph.utils
 import upickle.Js
 import upickle.default._
 
-import scala.language.implicitConversions
-
 object Utils {
 
   sealed trait Node {
     val encodedName: String
-    val displayName: String
-    val nonExistent: Boolean
-    val out = collection.mutable.Set[String]()
-    val in = collection.mutable.Set[String]()
+    val isExported: Boolean
   }
 
-  case class ClassNode(
-                        encodedName: String,
-                        displayName: String,
-                        nonExistent: Boolean,
-                        methods: Set[String]) extends Node
+  @key("M")
+  final case class MethodNode(encodedName: String,
+                              isExported: Boolean,
+                              className: String,
+                              methodsCalled: Map[String, List[String]],
+                              calledFrom: Map[String, List[String]],
+                              instantiatedClasses: List[String]) extends Node
 
-  case class MethodNode(
-                         encodedName: String,
-                         displayName: String,
-                         nonExistent: Boolean,
-                         parent: String,
-                         static: Boolean
-                       ) extends Node
+  @key("C")
+  final case class ClassNode(encodedName: String,
+                             isExported: Boolean,
+                             superClass: Option[String],
+                             interfaces: Seq[String],
+                             methods: Set[MethodNode]) extends Node
 
+  final case class CallGraph(classes: Set[ClassNode])
 
-  implicit def toJsBool(b: Boolean): Js.Value = {
-    b match {
-      case true => Js.True
-      case false => Js.False
+  /**
+    * Unfortunately there is an issue with uPickle on Scala 2.10.
+    * Plugins uses 2.10 to compile, forcing us to write an explicit
+    * converter.
+    * See https://github.com/lihaoyi/upickle-pprint/issues/20
+    * I couldn't make quasiquotes work with our project...
+    */
+  object MethodNode {
+    implicit val methodNodeWriter = upickle.default.Writer[MethodNode] {
+      case t => Js.Obj(
+        ("e", Js.Str(t.encodedName)),
+        ("i", upickle.default.writeJs[Boolean](t.isExported)),
+        ("c", Js.Str(t.className)),
+        ("m", upickle.default.writeJs(t.methodsCalled)),
+        ("cf", upickle.default.writeJs(t.calledFrom)),
+        ("ic", upickle.default.writeJs(t.instantiatedClasses))
+      )
     }
-  }
-
-  implicit def boolToJs(b: Js.Value): Boolean = {
-    b match {
-      case Js.True => true
-      case Js.False => false
-      case _ => throw new Exception("Boolean expected")
+    implicit val methodNodeReader = upickle.default.Reader[MethodNode] {
+      case Js.Obj(
+      (_, encodedName),
+      (_, isExported),
+      (_, className),
+      (_, methodsCalled),
+      (_, calledFrom),
+      (_, instantiatedClasses)
+      ) => new MethodNode(upickle.default.readJs[String](encodedName),
+        upickle.default.readJs[Boolean](isExported),
+        upickle.default.readJs[String](className),
+        upickle.default.readJs[Map[String, List[String]]](methodsCalled),
+        upickle.default.readJs[Map[String, List[String]]](calledFrom),
+        upickle.default.readJs[List[String]](instantiatedClasses)
+      )
     }
   }
 
   object ClassNode {
-
-    implicit val thing2Writer = upickle.default.Writer[ClassNode] {
-      case t =>
-        val outEdges: Array[Js.Value] = t.out.toList.map(Js.Str).toArray[Js.Value]
-        val inEdges: Array[Js.Value] = t.in.toList.map(Js.Str).toArray[Js.Value]
-        val methods: Array[Js.Value] = t.methods.map(Js.Str).toArray[Js.Value]
-
-        Js.Obj(
-          ("encodedName", Js.Str(t.encodedName)),
-          ("displayName", Js.Str(t.displayName)),
-          ("nonExistent", t.nonExistent),
-          ("outEdges", Js.Arr(outEdges: _*)),
-          ("inEdges", Js.Arr(inEdges: _*)),
-          ("methods", Js.Arr(methods: _*)),
-          ("type", Js.Str("class"))
-        )
+    implicit val methodNodeWriter = upickle.default.Writer[ClassNode] {
+      case t => Js.Obj(
+        ("e", Js.Str(t.encodedName)),
+        ("i", upickle.default.writeJs[Boolean](t.isExported)),
+        ("s", upickle.default.writeJs[Option[String]](t.superClass)),
+        ("in", upickle.default.writeJs[Seq[String]](t.interfaces)),
+        ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
+      )
     }
-    implicit val thing2Reader = upickle.default.Reader[ClassNode] {
-      case Js.Obj((_, encodedName), (_, displayName), (_, nonExistent), (_, out: Js.Arr), (_, in: Js.Arr), (_, methods: Js.Arr), _) =>
-        val node = new ClassNode(encodedName.toString, displayName.toString, nonExistent, methods.value.map(_.toString).toSet)
-        node.out ++= out.value.map(_.toString)
-        node.in ++= in.value.map(_.toString)
-        node
-    }
-  }
-
-  /**
-    * MethodNode serializer
-    */
-  object MethodNode {
-
-    implicit val thing2Writer = upickle.default.Writer[MethodNode] {
-      case t =>
-        val outEdges: Array[Js.Value] = t.out.toList.map(Js.Str).toArray[Js.Value]
-        val inEdges: Array[Js.Value] = t.in.toList.map(Js.Str).toArray[Js.Value]
-        Js.Obj(
-          ("encodedName", Js.Str(t.encodedName)),
-          ("displayName", Js.Str(t.displayName)),
-          ("nonExistent", t.nonExistent),
-          ("parent", Js.Str(t.parent)),
-          ("static", t.static),
-          ("outEdges", Js.Arr(outEdges: _*)),
-          ("inEdges", Js.Arr(inEdges: _*)),
-          ("type", Js.Str("method"))
-        )
-    }
-    implicit val thing2Reader = upickle.default.Reader[MethodNode] {
-      case Js.Obj((_, encodedName), (_, displayName), (_, nonExistent), (_, parent), (_, static), (_, out: Js.Arr), (_, in: Js.Arr), _) =>
-        val node = new MethodNode(encodedName.toString, displayName.toString, nonExistent, parent.toString, static)
-        node.out ++= out.value.map(_.toString)
-        node.in ++= in.value.map(_.toString)
-        node
+    implicit val methodNodeReader = upickle.default.Reader[ClassNode] {
+      case Js.Obj(
+      (_, encodedName),
+      (_, isExported),
+      (_, superClass),
+      (_, interfaces),
+      (_, methods)
+      ) => new ClassNode(upickle.default.readJs[String](encodedName),
+        upickle.default.readJs[Boolean](isExported),
+        upickle.default.readJs[Option[String]](superClass),
+        upickle.default.readJs[Seq[String]](interfaces),
+        upickle.default.readJs[Set[MethodNode]](methods)
+      )
     }
   }
+
 }

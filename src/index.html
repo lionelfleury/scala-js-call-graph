@@ -1,11 +1,96 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>Scala.js Call Graph Visualization</title>
-</head>
+<meta charset="UTF-8">
+<title>Scala.js Call Graph Visualization</title>
+<style>
+#header {
+    background-color:black;
+    color:white;
+    text-align:center;
+    padding:5px;
+}
+#nav {
+    background-color:#eeeeee;
+    height:800px;
+    width:300px;
+    float:left;
+    padding:5px;
+}
+#main {
+    width:800px;
+    float:left;
+    padding:10px;
+}
+.node {
+  cursor: pointer;
+  stroke: #3182bd;
+  stroke-width: 1.5px;
+}
+.node text {
+  fill: black;
+  stroke-width: 0px;
+  font: 9px helvetica;
+}
+.link {
+  fill: none;
+  stroke: #A0A0A0;
+  stroke-width: 1.5px;
+}
+
+.context-menu {
+    display: none;
+    position: absolute;
+    z-index: 10;
+    padding: 12px 0;
+    width: 240px;
+    background-color: #fff;
+    border: solid 1px #dfdfdf;
+    box-shadow: 1px 1px 2px #cfcfcf;
+}
+
+.context-menu--active {
+    display: block;
+}
+
+.context-menu__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.context-menu__item {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.context-menu__item:last-child {
+    margin-bottom: 0;
+}
+
+.context-menu__link {
+    display: block;
+    padding: 4px 12px;
+    color: #0066aa;
+    text-decoration: none;
+}
+
+.context-menu__link:hover {
+    color: #fff;
+    background-color: #0066aa;
+}
+
+.layers a.active {
+    text-decoration: none;
+    pointer-events: none;
+    cursor: default;
+    color: black;
+}
+    <!-- Analysis  logcallstack  and implementation -->
+</style>
 <body>
-<h1>Scala.js Call Graph Visualization</h1>
+<div id="header"><h1>Scala.js Call Graph Visualization</h1></div>
+<div id="nav" style="overflow:auto"></div>
+<div id="main" style="overflow:auto"></div>
 
 <script type="text/javascript" src="../target/scala-2.11/scalajs-callgraph-fastopt.js"></script>
 <script type="text/javascript" src="../target/scala-2.11/scalajs-callgraph-jsdeps.js"></script>

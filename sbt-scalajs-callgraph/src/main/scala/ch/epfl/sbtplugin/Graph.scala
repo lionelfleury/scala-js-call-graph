@@ -1,94 +1,55 @@
 package ch.epfl.sbtplugin
 
-import java.io.{FileWriter, BufferedWriter, File}
+import java.io.{BufferedWriter, File, FileWriter}
 
-import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
-import org.scalajs.core.tools.linker.analyzer.Analysis
-import org.scalajs.core.tools.linker.analyzer.Analysis.{FromMethod, ClassInfo}
-import upickle.Js
-import upickle.default._
+import ch.epfl.callgraph.utils.Utils._
+import org.scalajs.core.ir.Infos._
 
-import scala.language.implicitConversions
+import scala.collection.mutable
 
-class Graph(graph: Map[String, Analysis.ClassInfo]) {
+object Graph {
 
-  implicit def toClassNode(classInfo: Analysis.ClassInfo): ClassNode = {
-    new ClassNode(
-      classInfo.encodedName,
-      classInfo.displayName,
-      classInfo.nonExistent,
-      (classInfo.methodInfos ++ classInfo.staticMethodInfos).map(_._2.encodedName).toSet
-    )
+  private def toClassNode(ci: ClassInfo, methods: Set[MethodNode]): ClassNode = {
+    new ClassNode(ci.encodedName, ci.isExported, ci.superClass, ci.interfaces, methods)
   }
 
-  implicit def toMethodNode(methodInfo: Analysis.MethodInfo): MethodNode = {
-    new MethodNode(
-      methodInfo.encodedName,
-      methodInfo.displayName,
-      methodInfo.nonExistent,
-      methodInfo.owner.encodedName,
-      methodInfo.isStatic
-    )
+  private def toMethodNode(ci: ClassInfo, mi: MethodInfo, calledFrom: Map[String, List[String]]): MethodNode = {
+    val methods = mi.methodsCalled ++ mi.methodsCalledStatically ++ mi.staticMethodsCalled
+    new MethodNode(mi.encodedName, mi.isExported, ci.encodedName, methods, calledFrom, mi.instantiatedClasses)
   }
 
-  val newGraph = collection.mutable.Map[String, Node]()
+  def createFrom(classInfos: Seq[ClassInfo]): CallGraph = {
+    val classes = new mutable.HashSet[ClassNode]()
 
-  /**
-    * Add all the methods of the given class to the graph
- *
-    * @param classInfo The class to add the methods from
-    */
-  def addMissingMethods(classInfo: ClassInfo) = {
-    classInfo.methodInfos ++ classInfo.staticMethodInfos foreach {
-      /** Add all methods to graph **/
-      case (_, meth) =>
-        if(!newGraph.isDefinedAt(meth.encodedName))
-          newGraph += (meth.encodedName -> meth)
-      case _ =>
+    val called = new mutable.HashMap[String, mutable.HashMap[String, mutable.HashSet[String]]]()
+
+    for {
+      ci <- classInfos
+      mi <- ci.methods
+      (className, methodNames) <- mi.methodsCalled ++ mi.methodsCalledStatically ++ mi.staticMethodsCalled
+      methodName <- methodNames
+    } {
+      val calledMap = called.getOrElseUpdate(className + methodName, new mutable.HashMap[String, mutable.HashSet[String]]())
+      val calledList = calledMap.getOrElseUpdate(ci.encodedName, new mutable.HashSet[String]())
+      calledList.add(mi.encodedName)
     }
-  }
 
-  /*
-    Create the new graph to be exported.
-    In this graph, methods and classes are on the same level.
-   */
-  graph foreach {
-    case (name: String, vertex: Analysis.ClassInfo) => {
-      newGraph.get(vertex.encodedName) match {
-        case None => {
-          newGraph += (vertex.encodedName -> vertex)
-        }
-        case Some(_) =>
+    for (ci <- classInfos) {
+      val methods = ci.methods.foldLeft(Set[MethodNode]()) { case (acc, mi) =>
+        val cf = called.getOrElse(ci.encodedName + mi.encodedName, Map.empty)
+        acc + toMethodNode(ci, mi, cf.mapValues(_.toList).toMap)
       }
-      addMissingMethods(vertex)
-
-      /*
-        Inverse the existing edges
-       */
-      vertex.instantiatedFrom.foreach {
-        case f: FromMethod => {
-          val method = f.methodInfo
-          val methodNode: MethodNode = newGraph.get(method.encodedName) match {
-            case Some(x: MethodNode) => x /** Found it **/
-            case Some(x) => throw new Exception("Should be a  MethodNode") /** **/
-            case None => {
-              /** Not in the graph **/
-              val methodNode: MethodNode = method
-              newGraph += (method.encodedName -> methodNode)
-              methodNode
-            }
-          }
-          methodNode.out += vertex.encodedName /** Add a link from the method to the class **/
-        }
-        case _ => /** Not implemented yet **/
-      }
+      classes += toClassNode(ci, methods)
     }
+    called.clear()
+    CallGraph(classes.toSet)
   }
 
-  val t = newGraph.map(x => x._2)
-  val file = new File("graph.json")
-  val bw = new BufferedWriter(new FileWriter(file))
-  bw.write(write(t))
-  bw.close()
-
+  def writeToFile(graph: CallGraph, file: File): Unit = {
+    val json = upickle.default.write(graph)
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(json)
+    bw.flush()
+    bw.close()
+  }
 }
