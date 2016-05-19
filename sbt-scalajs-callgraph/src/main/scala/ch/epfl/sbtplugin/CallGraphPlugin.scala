@@ -59,7 +59,7 @@ object CallGraphPlugin extends AutoPlugin {
           log.info(s"CallGraph file created in $jsonFile")
 
           val htmlFile = crossTarget.value / "index.html"
-          HTMLFile.writeToFile(htmlFile)g
+          HTMLFile.writeToFile(htmlFile)
           log.info(s"HTML file created in $htmlFile")
         }
 

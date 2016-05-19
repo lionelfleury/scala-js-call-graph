@@ -16,6 +16,7 @@ object Graph {
   }
 
   private def toClassNode(ci: ClassInfo, methods: Set[MethodNode]): ClassNode = {
+    val parent = if(ci.superClass == null) None else Some(ci.superClass.encodedName)
     new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, parent, ci.ancestors.map(_.encodedName), methods)
   }
 
@@ -38,13 +39,13 @@ object Graph {
     * @return a map of map, associating a method to classes to methods
     */
   private def reverseEdges(mis: Seq[MethodInfo]) : CallsMapping = {
-    val map = mutable.Map[String, mutable.Map[String, mutable.Seq[String]]]()
+    val map = mutable.Map[String, mutable.Map[String, mutable.Set[String]]]()
     mis foreach(mi => {
       mi.calledFrom.foreach {
         case FromMethod(f) =>
-          val bucket = map.getOrElseUpdate(f.encodedName, mutable.HashMap[String, mutable.Seq[String]]())
-          val called = bucket.getOrElseUpdate(mi.owner.encodedName, mutable.Seq[String]())
-          called ++ mi.encodedName
+          val bucket = map.getOrElseUpdate(f.encodedName, mutable.HashMap[String, mutable.Set[String]]())
+          val called = bucket.getOrElseUpdate(mi.owner.encodedName, mutable.HashSet[String]())
+          called += mi.encodedName
         case _ =>
       }
     })
