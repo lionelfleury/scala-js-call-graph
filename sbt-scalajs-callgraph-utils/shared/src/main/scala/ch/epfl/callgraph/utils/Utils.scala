@@ -8,22 +8,26 @@ object Utils {
   sealed trait Node {
     val encodedName: String
     val isExported: Boolean
+    val nonExistent: Boolean
   }
-
-  @key("M")
-  final case class MethodNode(encodedName: String,
-                              isExported: Boolean,
-                              className: String,
-                              methodsCalled: Map[String, List[String]],
-                              calledFrom: Map[String, List[String]],
-                              instantiatedClasses: List[String]) extends Node
 
   @key("C")
   final case class ClassNode(encodedName: String,
                              isExported: Boolean,
-                             superClass: Option[String],
+                             nonExistent: Boolean,
+                             superClass: String,
                              interfaces: Seq[String],
                              methods: Set[MethodNode]) extends Node
+
+  @key("M")
+  final case class MethodNode(
+                         encodedName: String,
+                         isExported: Boolean,
+                         nonExistent: Boolean,
+                         className: String,
+                         methodsCalled: Map[String, List[String]],
+                         calledFrom: Map[String, List[String]]
+                       ) extends Node
 
   final case class CallGraph(classes: Set[ClassNode])
 
@@ -39,26 +43,27 @@ object Utils {
       case t => Js.Obj(
         ("e", Js.Str(t.encodedName)),
         ("i", upickle.default.writeJs[Boolean](t.isExported)),
+        ("ne", upickle.default.writeJs[Boolean](t.nonExistent)),
         ("c", Js.Str(t.className)),
         ("m", upickle.default.writeJs(t.methodsCalled)),
-        ("cf", upickle.default.writeJs(t.calledFrom)),
-        ("ic", upickle.default.writeJs(t.instantiatedClasses))
+        ("cf", upickle.default.writeJs(t.calledFrom))
       )
     }
+
     implicit val methodNodeReader = upickle.default.Reader[MethodNode] {
       case Js.Obj(
       (_, encodedName),
       (_, isExported),
+      (_, nonExistent),
       (_, className),
       (_, methodsCalled),
-      (_, calledFrom),
-      (_, instantiatedClasses)
+      (_, calledFrom)
       ) => new MethodNode(upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
+        upickle.default.readJs[Boolean](nonExistent),
         upickle.default.readJs[String](className),
         upickle.default.readJs[Map[String, List[String]]](methodsCalled),
-        upickle.default.readJs[Map[String, List[String]]](calledFrom),
-        upickle.default.readJs[List[String]](instantiatedClasses)
+        upickle.default.readJs[Map[String, List[String]]](calledFrom)
       )
     }
   }
@@ -68,7 +73,8 @@ object Utils {
       case t => Js.Obj(
         ("e", Js.Str(t.encodedName)),
         ("i", upickle.default.writeJs[Boolean](t.isExported)),
-        ("s", upickle.default.writeJs[Option[String]](t.superClass)),
+        ("ne", upickle.default.writeJs[Boolean](t.nonExistent)),
+        ("s", upickle.default.writeJs[String](t.superClass)),
         ("in", upickle.default.writeJs[Seq[String]](t.interfaces)),
         ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
       )
@@ -77,12 +83,14 @@ object Utils {
       case Js.Obj(
       (_, encodedName),
       (_, isExported),
+      (_, nonExistent),
       (_, superClass),
       (_, interfaces),
       (_, methods)
       ) => new ClassNode(upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
-        upickle.default.readJs[Option[String]](superClass),
+        upickle.default.readJs[Boolean](nonExistent),
+        upickle.default.readJs[String](superClass),
         upickle.default.readJs[Seq[String]](interfaces),
         upickle.default.readJs[Set[MethodNode]](methods)
       )
