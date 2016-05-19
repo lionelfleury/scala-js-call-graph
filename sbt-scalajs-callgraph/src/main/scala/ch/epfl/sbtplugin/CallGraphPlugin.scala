@@ -52,7 +52,7 @@ object CallGraphPlugin extends AutoPlugin {
 
         def createCallGraph(infos: Seq[Infos.ClassInfo]) = {
           val analysis = Analyzer.computeReachability(semantics, symbolRequirements, infos, false)
-          val graph = Graph.createFrom(analysis)
+          val graph = Graph.createFrom(analysis.classInfos.values.toSeq)
 
           val jsonFile = crossTarget.value / "graph.json"
           Graph.writeToFile(graph, jsonFile)
