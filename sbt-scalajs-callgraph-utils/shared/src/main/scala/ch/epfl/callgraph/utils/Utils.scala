@@ -20,16 +20,14 @@ object Utils {
                              methods: Set[MethodNode]) extends Node
 
   @key("M")
-  final case class MethodNode(
-                         encodedName: String,
-                         isExported: Boolean,
-                         nonExistent: Boolean,
-                         className: String,
-                         methodsCalled: Map[String, List[String]],
-                         calledFrom: Map[String, List[String]]
-                       ) extends Node
+  final case class MethodNode(encodedName: String,
+                              isExported: Boolean,
+                              nonExistent: Boolean,
+                              className: String,
+                              methodsCalled: Map[String, List[String]],
+                              calledFrom: Map[String, List[String]]) extends Node
 
-  final case class CallGraph(classes: Set[ClassNode])
+  final case class CallGraph(classes: Set[ClassNode] = Set.empty)
 
   /**
     * Unfortunately there is an issue with uPickle on Scala 2.10.
@@ -39,6 +37,7 @@ object Utils {
     * I couldn't make quasiquotes work with our project...
     */
   object MethodNode {
+
     implicit val methodNodeWriter = upickle.default.Writer[MethodNode] {
       case t => Js.Obj(
         ("e", Js.Str(t.encodedName)),
@@ -52,13 +51,14 @@ object Utils {
 
     implicit val methodNodeReader = upickle.default.Reader[MethodNode] {
       case Js.Obj(
-      (_, encodedName),
-      (_, isExported),
-      (_, nonExistent),
-      (_, className),
-      (_, methodsCalled),
-      (_, calledFrom)
-      ) => new MethodNode(upickle.default.readJs[String](encodedName),
+        (_, encodedName),
+        (_, isExported),
+        (_, nonExistent),
+        (_, className),
+        (_, methodsCalled),
+        (_, calledFrom)
+      ) => new MethodNode(
+        upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
         upickle.default.readJs[String](className),
@@ -69,6 +69,7 @@ object Utils {
   }
 
   object ClassNode {
+
     implicit val methodNodeWriter = upickle.default.Writer[ClassNode] {
       case t => Js.Obj(
         ("e", Js.Str(t.encodedName)),
@@ -79,15 +80,17 @@ object Utils {
         ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
       )
     }
+
     implicit val methodNodeReader = upickle.default.Reader[ClassNode] {
       case Js.Obj(
-      (_, encodedName),
-      (_, isExported),
-      (_, nonExistent),
-      (_, superClass),
-      (_, interfaces),
-      (_, methods)
-      ) => new ClassNode(upickle.default.readJs[String](encodedName),
+        (_, encodedName),
+        (_, isExported),
+        (_, nonExistent),
+        (_, superClass),
+        (_, interfaces),
+        (_, methods)
+      ) => new ClassNode(
+        upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
         upickle.default.readJs[String](superClass),

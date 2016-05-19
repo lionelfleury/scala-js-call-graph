@@ -1,9 +1,9 @@
 package ch.epfl.callgraph.visualization
 
-import ch.epfl.callgraph.utils.Utils.{CallGraph, ClassNode, MethodNode, Node}
+import ch.epfl.callgraph.utils.Utils.CallGraph
 import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.html.Div
-import org.scalajs.dom.raw.{FileReader, HTMLLIElement}
+import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}
 import upickle.{default => upickle}
 
@@ -34,7 +34,7 @@ object Visualization extends JSApp {
 
   def updateHtmlAfterLoad(target: Div) = {
     target.innerHTML = ""
-    target.appendChild(div(searchField, output, layersHTML, ContextMenu.nav).render)
+    target.appendChild(div(searchField, layersHTML, output, ContextMenu.nav).render)
   }
 
   def readFile(target: Div)(evt: sdom.Event) = {
@@ -46,75 +46,19 @@ object Visualization extends JSApp {
       val text = reader.result.asInstanceOf[String]
       val callGraph = upickle.read[CallGraph](text)
       searchList(e)
-      D3Graph.setCallGraph(callGraph)
-      D3Graph.renderGraph()
+      D3GraphController.init(Layers.current().data, callGraph)
+      D3Graph.update()
       showLayers()
     }
   }
 
-  def loop(target: GraphNode): Unit = {
-    val classes = D3Graph.getCallGraph.classes
-    target.data match {
-      case mi: MethodNode =>
-        for ((cc, mcs) <- mi.calledFrom; mc <- mcs) {
-          val cns = classes.filter(c => c.encodedName == cc || c.superClass.fold(false)(_ == cc))
-          val mns = cns.flatMap(_.methods.filter(_.encodedName == mc))
-          if (mi.encodedName.contains("printString")) println(mi.encodedName + " " + mns.toList)
-          for (mn <- mns) {
-            val node = GraphNode(Decoder.decodeMethod(cc, mc), 1, mn)
-            if (Layers.current().nodes.add(node)) {
-              val link = GraphLink(node, target)
-              Layers.current().links.add(link)
-              loop(node)
-            }
-          }
-        }
-      case ci: ClassNode => // TODO: à voir quoi faire !!
-    }
-    D3Graph.update()
-  }
-
-  def view(encodedName: String) = (e: sdom.MouseEvent) => {
-    //    val text = e.target.valueOf().asInstanceOf[HTMLLIElement].innerHTML
-    // TODO: code to review and improve....!!!!
-    val as = encodedName.split('.')
-    if (as.length == 2) {
-      val className = as(0)
-      val methodName = as(1)
-      val node = D3Graph.getCallGraph.classes.find(_.encodedName == className).get
-      val mNode = node.methods.find(_.encodedName == methodName).get
-      val classNode = GraphNode(Decoder.decodeMethod(className, methodName), 1, mNode)
-      Layers.addLayer()
-      Layers.current().nodes += classNode
-      loop(classNode)
-      D3Graph.update()
-      Visualization.showLayers()
-    } else if (as.length == 1) {
-
-      // TODO: Expand node!!!
-    } else {
-      g.alert("Should not come here!!!")
-    }
-    //    D3Graph.getCallGraph.classes.find(n => n.encodedName == encodedName) match {
-    //      case None => g.alert("Not found")
-    //      case Some(n) => g.alert(s"Found: ${n.encodedName}")
-    //    }
-  }
+  def view(encodedName: String) = (e: sdom.MouseEvent) => Layers.openNode(encodedName)
 
   def renderList = {
-    def exp(node: Node): Boolean = !exported.checked || node.isExported
-    val list = if (methods.checked)
-      for (c <- D3Graph.getCallGraph.classes.toSeq; m <- c.methods; if exp(m))
-        yield (Decoder.decodeMethod(c.encodedName, m.encodedName), c.encodedName + "." + m.encodedName)
-      else for (c <- D3Graph.getCallGraph.classes.toSeq; if exp(c))
-        yield (Decoder.decodeClass(c.encodedName), c.encodedName)
-
     val search = box.value.toLowerCase
-    ul(for {
-      (s, h) <- list
-      s1 = if (search.contains(".")) search.toLowerCase.split('.') else Array(search.toLowerCase)
-      if s.toLowerCase.contains(s1(0)) && s.toLowerCase.contains(s1(s1.length - 1))
-    } yield li(s, onclick := view(h))).render
+    val Array(className, methodName) = if (search.contains(" ")) search.split(' ').take(2) else Array(search, "")
+    val result = D3GraphController.search(className, methodName, exported.checked).toSeq
+    ul(result map { case (displayName, encodedName) => li(displayName, onclick := view(encodedName)) }).render
   }
 
   def searchList(e: sdom.Event) = {
