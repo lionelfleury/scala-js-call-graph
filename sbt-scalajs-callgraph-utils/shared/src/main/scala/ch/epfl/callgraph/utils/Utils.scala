@@ -25,8 +25,8 @@ object Utils {
                          isExported: Boolean,
                          nonExistent: Boolean,
                          className: String,
-                         methodsCalled: Map[String, List[String]],
-                         calledFrom: Map[String, List[String]]
+                         methodsCalled: Map[String, Seq[String]],
+                         calledFrom: Map[String, Seq[String]]
                        ) extends Node
 
   final case class CallGraph(classes: Set[ClassNode])
