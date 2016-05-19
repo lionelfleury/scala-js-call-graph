@@ -9,25 +9,28 @@ object Utils {
     val encodedName: String
     val isExported: Boolean
     val nonExistent: Boolean
+    val isReachable: Boolean
   }
 
   @key("C")
   final case class ClassNode(encodedName: String,
                              isExported: Boolean,
                              nonExistent: Boolean,
+                             isReachable: Boolean,
                              superClass: Option[String],
                              interfaces: Seq[String],
                              methods: Set[MethodNode]) extends Node
 
   @key("M")
   final case class MethodNode(
-                         encodedName: String,
-                         isExported: Boolean,
-                         nonExistent: Boolean,
-                         className: String,
-                         methodsCalled: Map[String, Seq[String]],
-                         calledFrom: Map[String, Seq[String]]
-                       ) extends Node
+                               encodedName: String,
+                               isExported: Boolean,
+                               nonExistent: Boolean,
+                               isReachable: Boolean,
+                               className: String,
+                               methodsCalled: Map[String, Seq[String]],
+                               calledFrom: Map[String, Seq[String]]
+                             ) extends Node
 
   final case class CallGraph(classes: Set[ClassNode])
 
@@ -44,6 +47,7 @@ object Utils {
         ("e", Js.Str(t.encodedName)),
         ("i", upickle.default.writeJs[Boolean](t.isExported)),
         ("ne", upickle.default.writeJs[Boolean](t.nonExistent)),
+        ("re", upickle.default.writeJs[Boolean](t.isReachable)),
         ("c", Js.Str(t.className)),
         ("m", upickle.default.writeJs(t.methodsCalled)),
         ("cf", upickle.default.writeJs(t.calledFrom))
@@ -55,12 +59,14 @@ object Utils {
       (_, encodedName),
       (_, isExported),
       (_, nonExistent),
+      (_, reachable),
       (_, className),
       (_, methodsCalled),
       (_, calledFrom)
       ) => new MethodNode(upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
+        upickle.default.readJs[Boolean](reachable),
         upickle.default.readJs[String](className),
         upickle.default.readJs[Map[String, List[String]]](methodsCalled),
         upickle.default.readJs[Map[String, List[String]]](calledFrom)
@@ -74,6 +80,7 @@ object Utils {
         ("e", Js.Str(t.encodedName)),
         ("i", upickle.default.writeJs[Boolean](t.isExported)),
         ("ne", upickle.default.writeJs[Boolean](t.nonExistent)),
+        ("re", upickle.default.writeJs[Boolean](t.isReachable)),
         ("s", upickle.default.writeJs[Option[String]](t.superClass)),
         ("in", upickle.default.writeJs[Seq[String]](t.interfaces)),
         ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
@@ -84,12 +91,14 @@ object Utils {
       (_, encodedName),
       (_, isExported),
       (_, nonExistent),
+      (_, reachable),
       (_, superClass),
       (_, interfaces),
       (_, methods)
       ) => new ClassNode(upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
+        upickle.default.readJs[Boolean](reachable),
         upickle.default.readJs[Option[String]](superClass),
         upickle.default.readJs[Seq[String]](interfaces),
         upickle.default.readJs[Set[MethodNode]](methods)
