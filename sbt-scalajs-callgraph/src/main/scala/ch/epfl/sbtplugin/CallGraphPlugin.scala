@@ -52,14 +52,14 @@ object CallGraphPlugin extends AutoPlugin {
 
         def createCallGraph(infos: Seq[Infos.ClassInfo]) = {
           val analysis = Analyzer.computeReachability(semantics, symbolRequirements, infos, false)
-          val graph = Graph.createFrom(analysis)
+          val graph = Graph.createFrom(analysis.classInfos.values.toSeq)
 
           val jsonFile = crossTarget.value / "graph.json"
           Graph.writeToFile(graph, jsonFile)
           log.info(s"CallGraph file created in $jsonFile")
 
           val htmlFile = crossTarget.value / "index.html"
-          HTMLFile.writeToFile(htmlFile)
+          HTMLFile.writeToFile(htmlFile)g
           log.info(s"HTML file created in $htmlFile")
         }
 

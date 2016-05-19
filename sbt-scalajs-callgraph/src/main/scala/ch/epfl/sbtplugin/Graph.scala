@@ -16,7 +16,7 @@ object Graph {
   }
 
   private def toClassNode(ci: ClassInfo, methods: Set[MethodNode]): ClassNode = {
-    new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, ci.superClass.encodedName, ci.ancestors.map(_.encodedName), methods)
+    new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, parent, ci.ancestors.map(_.encodedName), methods)
   }
 
   /**

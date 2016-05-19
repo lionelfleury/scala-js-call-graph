@@ -15,7 +15,7 @@ object Utils {
   final case class ClassNode(encodedName: String,
                              isExported: Boolean,
                              nonExistent: Boolean,
-                             superClass: String,
+                             superClass: Option[String],
                              interfaces: Seq[String],
                              methods: Set[MethodNode]) extends Node
 
@@ -74,7 +74,7 @@ object Utils {
         ("e", Js.Str(t.encodedName)),
         ("i", upickle.default.writeJs[Boolean](t.isExported)),
         ("ne", upickle.default.writeJs[Boolean](t.nonExistent)),
-        ("s", upickle.default.writeJs[String](t.superClass)),
+        ("s", upickle.default.writeJs[Option[String]](t.superClass)),
         ("in", upickle.default.writeJs[Seq[String]](t.interfaces)),
         ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
       )
@@ -90,7 +90,7 @@ object Utils {
       ) => new ClassNode(upickle.default.readJs[String](encodedName),
         upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
-        upickle.default.readJs[String](superClass),
+        upickle.default.readJs[Option[String]](superClass),
         upickle.default.readJs[Seq[String]](interfaces),
         upickle.default.readJs[Set[MethodNode]](methods)
       )

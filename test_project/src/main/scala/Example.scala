@@ -5,6 +5,7 @@ object Example extends JSApp {
   def main(): Unit = {
     foo(42)
     println("The world's a better place...")
+    Set(1,2,3)
   }
 
   @JSExport
