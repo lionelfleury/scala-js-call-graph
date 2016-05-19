@@ -9,7 +9,7 @@ import scala.scalajs.js.JSConverters.genTravConvertible2JSRichGenTrav
 
 final case class GraphNode[N <: Node](displayName: String, data: N) extends forceModule.Node
 
-final case class GraphLink(source: GraphNode[_], target: GraphNode[_]) extends Link[GraphNode[_]]
+final case class GraphLink(source: GraphNode[_ <: Node], target: GraphNode[_ <: Node]) extends Link[GraphNode[_ <: Node]]
 
 object D3GraphController {
 
