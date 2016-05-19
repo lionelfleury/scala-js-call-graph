@@ -12,12 +12,24 @@ object Graph {
   type CallsMapping = Map[String, Map[String, Seq[String]]]
 
   private def toMethodNode(ci: ClassInfo, mi: MethodInfo, reverse: CallsMapping): MethodNode = {
-    new MethodNode(mi.encodedName, mi.isExported, mi.nonExistent, ci.encodedName, reverse.getOrElse(mi.encodedName, Map[String, Seq[String]]()), fromToList(mi.calledFrom))
+    new MethodNode(mi.encodedName,
+      mi.isExported,
+      mi.nonExistent,
+      mi.isReachable,
+      ci.encodedName,
+      reverse.getOrElse(mi.encodedName, Map[String, Seq[String]]()),
+      fromToList(mi.calledFrom))
   }
 
   private def toClassNode(ci: ClassInfo, methods: Set[MethodNode]): ClassNode = {
     val parent = if(ci.superClass == null) None else Some(ci.superClass.encodedName)
-    new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, parent, ci.ancestors.map(_.encodedName), methods)
+    new ClassNode(ci.encodedName,
+      ci.isExported,
+      ci.nonExistent,
+      ci.isNeededAtAll,
+      parent,
+      ci.ancestors.map(_.encodedName),
+      methods)
   }
 
   /**

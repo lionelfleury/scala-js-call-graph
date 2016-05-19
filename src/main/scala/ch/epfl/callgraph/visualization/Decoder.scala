@@ -64,15 +64,7 @@ object Decoder {
   private def isConstructorName(name: String): Boolean =
     name.startsWith("init___")
 
-//  private def decodeReferenceType(encodedName: String): ReferenceType = {
-//    val arrayDepth = encodedName.indexWhere(_ != 'A')
-//    if (arrayDepth == 0)
-//      ClassType(encodedName)
-//    else
-//      ArrayType(encodedName.substring(arrayDepth), arrayDepth)
-//  }
-
-  private def decodeMethodName(encodedName: String): String /*(String, List[ReferenceType], Option[ReferenceType])*/ = {
+  private def decodeMethodName(encodedName: String): String = {
     val (simpleName, privateAndSigString) =
       if (isConstructorName(encodedName)) {
         val privateAndSigString =
@@ -91,35 +83,12 @@ object Decoder {
         }
       }
 
-    // -1 preserves trailing empty strings
-//    val parts = privateAndSigString.split("__", -1).toSeq
-//    val paramsAndResultStrings =
-//      if (parts.headOption.exists(_.startsWith("p"))) parts.tail
-//      else parts
-//
-//    val paramStrings :+ resultString = paramsAndResultStrings
-//
-//    val paramTypes = paramStrings.map(decodeReferenceType).toList
-//    val resultType =
-//      if (resultString == "") None // constructor or reflective proxy
-//      else Some(decodeReferenceType(resultString))
-//
-//    (simpleName, paramTypes, resultType)
     val exportedPrefix = "$$js$exported$meth$"
     if (simpleName.startsWith(exportedPrefix)) "<" + simpleName.replace(exportedPrefix, "") + ">"
     else simpleName
   }
 
   private def displayName(encodedName: String): String = {
-//    def typeDisplayName(tpe: ReferenceType): String = tpe match {
-//      case ClassType(encodedName) => decodeClassName(encodedName)
-//      case ArrayType(base, dimensions) => "[" * dimensions + decodeClassName(base)
-//    }
-//
-//    val (simpleName, paramTypes, resultType) = decodeMethodName(encodedName)
-
-    //    simpleName + "(" + paramTypes.map(typeDisplayName).mkString(",") + ")" +
-    //      resultType.fold("")(typeDisplayName)
     decodeMethodName(encodedName)
   }
 
