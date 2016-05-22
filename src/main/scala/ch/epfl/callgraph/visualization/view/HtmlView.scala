@@ -15,15 +15,13 @@ object HtmlView extends JSApp {
   val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here and press enter!").render
   val exported = input(`type` := "checkbox", checked).render
-  val methods = input(`type` := "checkbox").render
   val output = span.render
   val layersHTML = div(`class` := "layers").render
 
-  val searchField = div(box, div(" Only exported:", exported), div(" Methods:", methods)).render
+  val searchField = div(box, div(" Only exported:", exported)).render
 
   box.onkeyup = (e: KeyboardEvent) => if (e.keyCode == 13) searchList(e)
   exported.onclick = searchList _
-  methods.onclick = searchList _
 
   def main(): Unit = {
     val target = sdom.document.getElementById("nav").asInstanceOf[Div]
@@ -48,8 +46,8 @@ object HtmlView extends JSApp {
   def searchList(e: sdom.Event) = {
     output.innerHTML = ""
 
-    val as = box.value.split(' ')
-    val result = D3GraphController.search(as, exported.checked).take(20).toSeq
+    val values = box.value.split(' ')
+    val result = D3GraphController.search(values, exported.checked).take(20).toSeq
 
     def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
 
