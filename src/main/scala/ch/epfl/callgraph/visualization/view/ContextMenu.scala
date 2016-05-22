@@ -1,29 +1,26 @@
-package ch.epfl.callgraph.visualization
+package ch.epfl.callgraph.visualization.view
 
 import org.scalajs.dom.raw.Event
 
 import scalatags.JsDom.all._
 
-/**
-  * A context menu (right click) to handle actions on GraphNodes
-  */
 object ContextMenu {
 
   val newLayerLink = li(`class` := "context-menu__item")(
     a(`class` := "context-menu__link")(
-      i(`class` := "fa fa-eye")("Expand to new layer")
+      i(`class` := "fa fa-eye")("Expand node to new layer")
     )
   ).render
 
   val expandLink = li(`class` := "context-menu__item")(
     a(`class` := "context-menu__link")(
-      i(`class` := "fa fa-eye")("Expand Node")
+      i(`class` := "fa fa-eye")("Expand node forward")
     )
   ).render
 
   val hideLink = li(`class` := "context-menu__item")(
     a(`class` := "context-menu__link")(
-      i(`class` := "fa fa-eye")("Hide Node")
+      i(`class` := "fa fa-eye")("Hide node")
     )
   ).render
 

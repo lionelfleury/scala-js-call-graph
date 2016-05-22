@@ -1,11 +1,13 @@
-package ch.epfl.callgraph.visualization
+package ch.epfl.callgraph.visualization.model
+
+import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
 
 /**
   * Created by Lionel on 07/05/16.
   */
 object Decoder {
 
-  private def decodeClassName(encodedName: String): String = {
+  def decodeClassName(encodedName: String): String = {
     val encoded =
       if (encodedName.charAt(0) == '$') encodedName.substring(1)
       else encodedName
@@ -64,7 +66,7 @@ object Decoder {
   private def isConstructorName(name: String): Boolean =
     name.startsWith("init___")
 
-  private def decodeMethodName(encodedName: String): String = {
+  def decodeMethodName(encodedName: String): String = {
     val (simpleName, privateAndSigString) =
       if (isConstructorName(encodedName)) {
         val privateAndSigString =
@@ -88,29 +90,23 @@ object Decoder {
     else simpleName
   }
 
-  private def displayName(encodedName: String): String = {
-    decodeMethodName(encodedName)
+  def splitEncodedName(fullEncodedName: String): (String, String) = {
+    val as = fullEncodedName.split('.')
+    val className = as(0)
+    val methodName = if (as.length > 1) as(1) else ""
+    (className, methodName)
   }
 
-  /**
-    * Returns the decoded class name
-    *
-    * @param encodedName
-    * @return
-    */
-  def decodeClass(encodedName: String): String = {
-    decodeClassName(encodedName)
+  def getFullEncodedName(className: String, methodName: String): String = className + "." + methodName
+
+  def getFullEncodedName(node: Node): String = node match {
+    case classNode: ClassNode => classNode.encodedName
+    case methodNode: MethodNode => getFullEncodedName(methodNode.className, methodNode.encodedName)
   }
 
-  /**
-    * Returns the decoded class and method name
-    *
-    * @param classEncodedName
-    * @param encodedName
-    * @return
-    */
-  def decodeMethod(classEncodedName: String, encodedName: String): String = {
-    decodeClass(classEncodedName) + "." + displayName(encodedName)
+  def getDisplayName(node: Node): String = node match {
+    case classNode: ClassNode => decodeClassName(classNode.encodedName)
+    case methodNode: MethodNode => decodeClassName(methodNode.className) + "." + decodeMethodName( methodNode.encodedName)
   }
 
 }

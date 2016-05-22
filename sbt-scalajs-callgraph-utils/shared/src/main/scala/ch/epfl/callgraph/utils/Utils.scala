@@ -6,10 +6,10 @@ import upickle.default._
 object Utils {
 
   sealed trait Node {
-    val encodedName: String
-    val isExported: Boolean
-    val nonExistent: Boolean
-    val isReachable: Boolean
+    def encodedName: String
+    def isExported: Boolean
+    def nonExistent: Boolean
+    def isReachable: Boolean
   }
 
   @key("C")
@@ -55,15 +55,15 @@ object Utils {
 
     implicit val methodNodeReader = upickle.default.Reader[MethodNode] {
       case Js.Obj(
-        (_, encodedName),
-        (_, isExported),
-        (_, nonExistent),
-        (_, reachable),
-        (_, className),
-        (_, methodsCalled),
-        (_, calledFrom)
+      (_, encodedName),
+      (_, isExported),
+      (_, nonExistent),
+      (_, reachable),
+      (_, className),
+      (_, methodsCalled),
+      (_, calledFrom)
       ) => new MethodNode(upickle.default.readJs[String](encodedName),
-          upickle.default.readJs[Boolean](isExported),
+        upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
         upickle.default.readJs[Boolean](reachable),
         upickle.default.readJs[String](className),
@@ -89,15 +89,15 @@ object Utils {
 
     implicit val methodNodeReader = upickle.default.Reader[ClassNode] {
       case Js.Obj(
-        (_, encodedName),
-        (_, isExported),
-        (_, nonExistent),
-        (_, reachable),
-        (_, superClass),
-        (_, interfaces),
-        (_, methods)
+      (_, encodedName),
+      (_, isExported),
+      (_, nonExistent),
+      (_, reachable),
+      (_, superClass),
+      (_, interfaces),
+      (_, methods)
       ) => new ClassNode(upickle.default.readJs[String](encodedName),
-          upickle.default.readJs[Boolean](isExported),
+        upickle.default.readJs[Boolean](isExported),
         upickle.default.readJs[Boolean](nonExistent),
         upickle.default.readJs[Boolean](reachable),
         upickle.default.readJs[Option[String]](superClass),

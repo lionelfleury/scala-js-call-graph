@@ -1,6 +1,7 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.CallGraph
+import ch.epfl.callgraph.visualization.view.{D3GraphView, HtmlView}
 import org.junit.Assert._
 import org.junit.{Before, Test}
 import org.scalajs.dom.html._
@@ -23,10 +24,10 @@ class DocumentTest {
         global.jQuery("<div id=\"header\"><h1>Scala.js Call Graph Visualization</h1></div>" +
           "<div id=\"nav\" style=\"overflow:auto\"></div>" +
           "<div id=\"main\" style=\"overflow:auto\"></div>"))
-    Visualization.main() // setup the file upload button
-    D3Graph.setCallGraph(upickle.read[CallGraph](generateGraph))
-    Visualization.updateHtmlAfterLoad(sdom.document.getElementById("nav").asInstanceOf[Div])
-    D3Graph.renderGraph()
+    HtmlView.main() // setup the file upload button
+    D3GraphView.setCallGraph(upickle.read[CallGraph](generateGraph))
+    HtmlView.updateHtmlAfterLoad(sdom.document.getElementById("nav").asInstanceOf[Div])
+    D3GraphView.renderGraph()
   }
 
   def generateGraph = {
@@ -40,7 +41,7 @@ class DocumentTest {
   }
 
   @Test def testInitialLayer : Unit = {
-    Visualization.showLayers
+    HtmlView.showLayers
     assertEquals(1, $("li > a.active").length)
   }
 
