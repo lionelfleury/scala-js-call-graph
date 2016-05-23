@@ -19,7 +19,7 @@ object Utils {
                              isReachable: Boolean,
                              superClass: Option[String],
                              interfaces: Seq[String],
-                             methods: Set[MethodNode]) extends Node
+                             methods: Seq[MethodNode]) extends Node
 
   @key("M")
   final case class MethodNode(encodedName: String,
@@ -30,7 +30,7 @@ object Utils {
                               methodsCalled: Map[String, Seq[String]],
                               calledFrom: Map[String, Seq[String]]) extends Node
 
-  final case class CallGraph(classes: Set[ClassNode] = Set.empty)
+  final case class CallGraph(classes: Seq[ClassNode] = Seq.empty)
 
   /**
     * Unfortunately there is an issue with uPickle on Scala 2.10.
@@ -67,8 +67,8 @@ object Utils {
         upickle.default.readJs[Boolean](nonExistent),
         upickle.default.readJs[Boolean](reachable),
         upickle.default.readJs[String](className),
-        upickle.default.readJs[Map[String, List[String]]](methodsCalled),
-        upickle.default.readJs[Map[String, List[String]]](calledFrom)
+        upickle.default.readJs[Map[String, Seq[String]]](methodsCalled),
+        upickle.default.readJs[Map[String, Seq[String]]](calledFrom)
       )
     }
   }
@@ -83,7 +83,7 @@ object Utils {
         ("re", upickle.default.writeJs[Boolean](t.isReachable)),
         ("s", upickle.default.writeJs[Option[String]](t.superClass)),
         ("in", upickle.default.writeJs[Seq[String]](t.interfaces)),
-        ("m", upickle.default.writeJs[Set[MethodNode]](t.methods))
+        ("m", upickle.default.writeJs[Seq[MethodNode]](t.methods))
       )
     }
 
@@ -102,7 +102,7 @@ object Utils {
         upickle.default.readJs[Boolean](reachable),
         upickle.default.readJs[Option[String]](superClass),
         upickle.default.readJs[Seq[String]](interfaces),
-        upickle.default.readJs[Set[MethodNode]](methods)
+        upickle.default.readJs[Seq[MethodNode]](methods)
       )
     }
   }

@@ -11,7 +11,7 @@ import scala.scalajs.js.JSConverters.genTravConvertible2JSRichGenTrav
 import scala.scalajs.js.ThisFunction
 import scalatags.JsDom.all._
 
-final case class Layer(name: String) {
+final class Layer(val name: String) {
   private val nodes = mutable.HashSet[GraphNode]()
   private val links = mutable.HashSet[GraphLink]()
 
@@ -42,7 +42,7 @@ final case class Layer(name: String) {
   def removeNode(node: GraphNode) = {
     val newLinks = mutable.HashSet[GraphLink]()
     val newNodes = mutable.HashSet[GraphNode]()
-    for (link@GraphLink(src, tgt) <- links.filterNot(l => l.source == node || l.target == node)) {
+    for (link@GraphLink(src, tgt) <- links if src != node && tgt != node) {
       newLinks += link
       newNodes += src
       newNodes += tgt
@@ -76,7 +76,7 @@ object Layers {
   }
 
   def addLayer(name: String = "layer" + (layers.size + 1)): Layer = {
-    layers += Layer(name)
+    layers += new Layer(name)
     last
   }
 

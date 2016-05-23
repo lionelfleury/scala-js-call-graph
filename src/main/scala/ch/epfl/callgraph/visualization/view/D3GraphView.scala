@@ -146,7 +146,7 @@ object D3GraphView {
 
   def click(n: GraphNode): Unit = {
     if (d3d.event == null || !js.DynamicImplicits.truthValue(d3d.event.defaultPrevented))
-      D3GraphController.expandAllTowards(n)
+      D3GraphController.expandAllTo(n)
   }
 
   var selectedNode: Option[GraphNode] = None
@@ -165,7 +165,7 @@ object D3GraphView {
   })
 
   ContextMenu.setExpandCallback((e: dom.Event) => selectedNode foreach { node =>
-    D3GraphController.expandAllBackwards(node)
+    D3GraphController.expandAllFrom(node)
     selectedNode = None
     ContextMenu.hide()
   })
