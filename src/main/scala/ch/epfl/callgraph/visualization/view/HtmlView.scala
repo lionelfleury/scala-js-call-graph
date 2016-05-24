@@ -54,8 +54,8 @@ object HtmlView extends JSApp {
     def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
 
     val list = ul(result map {
-      case (displayName, encodedName) =>
-        li(a(displayName, style := "cursor: pointer;"), title := encodedName, onclick := view(encodedName))
+      case (shortName, displayName, encodedName) =>
+        li(a(shortName, style := "cursor: pointer;"), title := displayName, onclick := view(encodedName))
     }).render
     output.appendChild(list)
   }

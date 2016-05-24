@@ -123,7 +123,7 @@ object D3GraphController {
     * @param isReachable true for reachable nodes only
     * @return a sequence of (displayName, encodedName)
     */
-  def search(text: Seq[String], isExported: Boolean, isReachable: Boolean): Seq[(String, String)] = {
+  def search(text: Seq[String], isExported: Boolean, isReachable: Boolean): Seq[(String, String, String)] = {
     def exported(m: MethodNode) = !isExported || m.isExported
     def reachable(m: MethodNode) = !isReachable || m.isReachable
     (for {
@@ -131,8 +131,9 @@ object D3GraphController {
       methodNode <- classNode.methods if exported(methodNode) && reachable(methodNode)
       displayName = Decoder.getDisplayName(methodNode)
       encodedName = Decoder.getFullEncodedName(methodNode)
+      shortName = Decoder.shortenDisplayName(displayName)
       if text.forall(displayName.contains)
-    } yield (displayName, encodedName)) (collection.breakOut).sorted
+    } yield (shortName, displayName, encodedName)) (collection.breakOut).sorted
   }
 
   private def filter(className: String, methodName: String): Seq[MethodNode] = {

@@ -109,4 +109,12 @@ object Decoder {
     case methodNode: MethodNode => decodeClassName(methodNode.className) + "." + decodeMethodName( methodNode.encodedName)
   }
 
+  def shortenDisplayName(displayName: String): String = {
+    val as = displayName.split('.')
+    for (i <- 0 until as.length - 2) as(i) = as(i).take(1)
+    as.mkString(".")
+  }
+
+  def shortenDisplayName(node: Node): String = shortenDisplayName(getDisplayName(node))
+
 }

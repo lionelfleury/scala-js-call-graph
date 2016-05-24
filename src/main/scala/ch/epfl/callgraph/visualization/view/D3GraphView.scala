@@ -127,9 +127,9 @@ object D3GraphView {
     node.append("text")
       .attr("dx", 10)
       .attr("dy", ".35em")
-      .text((n: GraphNode) => Decoder.getDisplayName(n.data))
+      .text((n: GraphNode) => Decoder.shortenDisplayName(n.data))
       .append("title")
-      .text((n: GraphNode) => Decoder.getFullEncodedName(n.data))
+      .text((n: GraphNode) => Decoder.getDisplayName(n.data))
 
     link.exit().remove()
     link = link.data(links)
