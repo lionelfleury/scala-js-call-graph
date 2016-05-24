@@ -21,6 +21,7 @@ lazy val `scalajs-callgraph` = (project in file(".")).
   settings(commonSettings: _*).
   settings(testSettings: _*).
   settings(
+    scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.singlespaced" %%% "scalajs-d3" % "0.3.1",
       "org.scala-js" %% "scalajs-env-selenium" % "0.1.2",
