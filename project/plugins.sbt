@@ -6,11 +6,14 @@ unmanagedSourceDirectories in Compile ++= {
   )
 }
 
-libraryDependencies += "com.lihaoyi" %% "upickle" % "0.3.8"
-
-libraryDependencies += "org.scala-js" %% "scalajs-env-selenium" % "0.1.2"
+libraryDependencies ++= Seq(
+  "com.lihaoyi" %% "upickle" % "0.3.8",
+  "org.scala-js" %% "scalajs-env-selenium" % "0.1.2"
+)
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.8")
+
+addSbtPlugin("com.eed3si9n" % "sbt-doge" % "0.1.5")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
 
