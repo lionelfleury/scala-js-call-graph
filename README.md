@@ -10,5 +10,6 @@ addSbtPlugin("com.github.lionelfleury" % "sbt-scalajs-callgraph" % "0.1.0")
 sbt callgraph
 ```
 You get `graph.json` and `index.html` in your target directory.
-Open the html file and start exploring your Scala.js project'scv the call graph...
+
+Open the html file and start exploring your Scala.js project's call graph...
 
