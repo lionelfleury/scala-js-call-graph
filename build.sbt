@@ -1,19 +1,10 @@
 import org.scalajs.jsenv.selenium.{CustomFileMaterializer, Firefox}
 
-ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
-
 val commonSettings: Seq[Setting[_]] = Seq(
-  organization := "ch.epfl",
-  version := "0.1.0-SNAPSHOT",
+  organization := "com.github.lionelfleury",
+  version := "0.1.0",
   scalacOptions ++= Seq(
-    "-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8"),
-  homepage := Some(url("https://github.com/lionelfleury/scala-js-call-graph")),
-  licenses +=("MIT", url("http://opensource.org/licenses/mit-license.php")),
-  scmInfo := Some(ScmInfo(
-    url("https://github.com/lionelfleury/scala-js-call-graph"),
-    "scm:git:git@github.com:lionelfleury/scala-js-call-graph",
-    Some("scm:git@github.com:lionelfleury/scala-js-call-graph.git"))),
-  publishMavenStyle := true
+    "-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8")
 )
 
 lazy val `sbt-scalajs-callgraph-utils` =
@@ -66,7 +57,6 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,
     persistLauncher in Test := false,
-    publish := {},
     publishLocal := {
       "sbt sbt-scalajs-callgraph/publishLocal" +
         " reload" +
@@ -75,3 +65,46 @@ lazy val `scalajs-callgraph` = (project in file(".")).
         " scalajs-callgraph/fastOptJS" !
     }).
   dependsOn(utilsJVM, utilsJS)
+
+ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
+
+publishMavenStyle := true
+
+pomIncludeRepository := { _ => false }
+
+pomExtra in Global := {
+  <url>https://github.com/lionelfleury/scala-js-call-graph</url>
+    <licenses>
+      <license>
+        <name>MIT</name>
+        <url>http://opensource.org/licenses/mit-license.php</url>
+      </license>
+    </licenses>
+    <scm>
+      <connection>scm:git:github.com/lionelfleury/scala-js-call-graph</connection>
+      <developerConnection>scm:git:git@github.com:lionelfleury/scala-js-call-graph</developerConnection>
+      <url>github.com/lionelfleury/scala-js-call-graph.git</url>
+    </scm>
+    <developers>
+      <developer>
+        <id>lionelfleury</id>
+        <name>Lionel Fleury</name>
+        <url>https://github.com/lionelfleury/</url>
+      </developer>
+      <developer>
+        <id>ex0ns</id>
+        <name>Guillaume Tournigand</name>
+        <url>https://github.com/ex0ns/</url>
+      </developer>
+    </developers>
+}
+
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+publishArtifact in Test := false
