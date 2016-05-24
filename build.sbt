@@ -2,7 +2,7 @@ import org.scalajs.jsenv.selenium.{CustomFileMaterializer, Firefox}
 
 val commonSettings: Seq[Setting[_]] = Seq(
   organization := "com.github.lionelfleury",
-  version := "0.1.0",
+  version := "0.1.1-SNAPSHOT",
   scalacOptions ++= Seq(
     "-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8")
 )
