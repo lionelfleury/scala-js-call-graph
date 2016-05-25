@@ -2,6 +2,7 @@ package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.CallGraph
 import ch.epfl.callgraph.visualization.view.{D3GraphView, HtmlView}
+import ch.epfl.callgraph.visualization.controller.D3GraphController
 import org.junit.Assert._
 import org.junit.{Before, Test}
 import org.scalajs.dom.html._
@@ -24,14 +25,17 @@ class DocumentTest {
         global.jQuery("<div id=\"header\"><h1>Scala.js Call Graph Visualization</h1></div>" +
           "<div id=\"nav\" style=\"overflow:auto\"></div>" +
           "<div id=\"main\" style=\"overflow:auto\"></div>"))
-    HtmlView.main() // setup the file upload button
-    D3GraphView.setCallGraph(upickle.read[CallGraph](generateGraph))
-    HtmlView.updateHtmlAfterLoad(sdom.document.getElementById("nav").asInstanceOf[Div])
-    D3GraphView.renderGraph()
   }
 
-  def generateGraph = {
-    """{"classes":[{"encodedName":"s_Predef$Triple$2","displayName":"scala.Predef$Triple$2","isExported":true,"superClass":[],"interfaces":[],"methods":[]}]}"""
+  def singleNodeGraph = {
+    """{"classes":[{"e":"LFirstClassNode$","i":true,"ne":false,"re":true,"s":[],"in":[],"m":[]}], "methods":[]}"""
+  }
+
+  private def resetView(callgraph: CallGraph) = {
+    D3GraphController.init(callgraph)
+    HtmlView.showLeftNav
+    HtmlView.showLayers
+    HtmlView.searchList(null)
   }
 
   @Test def testInitialDOM(): Unit = {
@@ -41,26 +45,25 @@ class DocumentTest {
   }
 
   @Test def testInitialLayer : Unit = {
-    HtmlView.showLayers
-    assertEquals(1, $("li > a.active").length)
+    resetView(upickle.read[CallGraph](singleNodeGraph))
+    assertEquals(1, $("select option:selected").length)
   }
 
-  @Test def testSvgSingleNode : Unit = {
-    println($("svg").html())
-    $("svg").find("circle").each({(li: Html) => {
-      println($(li).attr("class"))
-    //  $(li).contextmenu()
-    }}: scalajs.js.ThisFunction)
+  @Test def svgDisplaySingleNode : Unit = {
+    resetView(upickle.read[CallGraph](singleNodeGraph))
     assertEquals(1, $("svg").find("circle").length)
-
   }
-/*
-  @Test def testSelectedNode : Unit = {
-    $("svg").find("circle").each({(li: Html) => {
-      println($(li).attr("class"))
-      // $(li).contextmenu()
-    }}: scalajs.js.ThisFunction) // ThisFunction in mandatory
-    //println(Visualization.d3Graph.selectedNode.name)
-  }*/
+
+  @Test def contextMenuHiddenByDefault : Unit = {
+    assertFalse($(".context-menu").is(":visible").asInstanceOf[Boolean])
+  }
+
+  @Test def clickOnNodeOpenContextMenu : Unit = {
+    resetView(upickle.read[CallGraph](singleNodeGraph))
+    $("svg").find(".node").each({(li: Html) => {
+      $(li).contextmenu()
+    }}: scalajs.js.ThisFunction)
+    assertTrue($(".context-menu").is(":visible").asInstanceOf[Boolean])
+  }
 
 }

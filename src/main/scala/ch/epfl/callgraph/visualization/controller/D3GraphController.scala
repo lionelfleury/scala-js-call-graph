@@ -7,7 +7,6 @@ import ch.epfl.callgraph.visualization.model.Decoder
 object D3GraphController {
 
   private var callGraph: CallGraph = CallGraph()
-
   private def layer: Layer = Layers.current
 
   /**
@@ -16,6 +15,7 @@ object D3GraphController {
     * @param graph the callGraph
     */
   def init(graph: CallGraph): Unit = {
+    Layers.reset
     callGraph = graph
     callGraph.classes.withFilter(_.isExported) foreach { c =>
       val source = layer.addNode(c)
