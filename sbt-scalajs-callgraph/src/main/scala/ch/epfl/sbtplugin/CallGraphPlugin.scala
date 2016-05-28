@@ -49,12 +49,12 @@ object CallGraphPlugin extends AutoPlugin {
 
       val analysis = Analyzer.computeReachability(semantics, symbolRequirements, infos, false)
       val graph = Graph.createFrom(analysis)
-      val file = artifactPath.value
+      val file = (artifactPath in callgraph).value
       HTMLFile.writeToFile(file, graph, false)
       log.info(s"HTML file created in $file")
     },
-    artifactPath in Compile := crossTarget.value / "callgraph.html",
-    artifactPath in Test := crossTarget.value / "callgraph-test.html"
+    artifactPath in (Compile, callgraph) := crossTarget.value / "callgraph.html",
+    artifactPath in (Test, callgraph) := crossTarget.value / "callgraph-test.html"
   )
 
   override lazy val projectSettings: Seq[Setting[_]] = {
