@@ -35,8 +35,8 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,
     persistLauncher in Test := false,
-    publish := (),
-    publishLocal := ()).
+    publish :=(),
+    publishLocal :=()).
   dependsOn(utilsJVM, utilsJS).
   aggregate(utilsJVM, utilsJS, `sbt-scalajs-callgraph`)
 

@@ -68,9 +68,9 @@ object Graph {
     * Create the call graph from the given analysis
     *
     * @param analysis the analysis
-    * @return the call graph
+    * @return the serialized call graph
     */
-  def createFrom(analysis: Analysis): CallGraph = {
+  def createFrom(analysis: Analysis): String = {
     val classInfos = analysis.classInfos.values
     val callsMap = reverseEdges(classInfos)
     val classes = mutable.Set[ClassNode]()
@@ -82,20 +82,8 @@ object Graph {
       }
       classes += toClassNode(classInfo, methods.toSeq)
     }
-    CallGraph(classes.toSeq)
+    val graph = CallGraph(classes.toSeq)
+    upickle.default.write(graph)
   }
 
-  /**
-    * Serialize and write to a file
-    *
-    * @param graph the call graph
-    * @param file  the file to write in
-    */
-  def writeToFile(graph: CallGraph, file: File): Unit = {
-    val json = upickle.default.write(graph)
-    val bw = new BufferedWriter(new FileWriter(file))
-    bw.write(json)
-    bw.flush()
-    bw.close()
-  }
 }
