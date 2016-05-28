@@ -59,6 +59,8 @@ lazy val `sbt-scalajs-callgraph-utils` = (crossProject in file("sbt-scalajs-call
 lazy val utilsJS = `sbt-scalajs-callgraph-utils`.js
 lazy val utilsJVM = `sbt-scalajs-callgraph-utils`.jvm
 
+ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
+
 publishMavenStyle := true
 
 publishArtifact in Test := false
@@ -71,7 +73,7 @@ publishTo := {
 
 pomIncludeRepository := { _ => false }
 
-pomExtra in Global := {
+pomExtra := {
   <url>https://github.com/lionelfleury/scala-js-call-graph</url>
     <licenses>
       <license>
