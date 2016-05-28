@@ -58,7 +58,7 @@ object CallGraphPlugin extends AutoPlugin {
     setting(callgraphDev, isDev = true),
     artifactPath in(Compile, callgraph) := crossTarget.value / "callgraph.html",
     artifactPath in(Test, callgraph) := crossTarget.value / "callgraph-test.html",
-    artifactPath in callgraphDev := crossTarget.value / "dev-callgraph.html"
+    artifactPath in callgraphDev := crossTarget.value / "callgraph-dev.html"
   )
 
   override lazy val projectSettings: Seq[Setting[_]] = {
