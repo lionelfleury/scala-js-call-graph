@@ -2,7 +2,7 @@ import org.scalajs.jsenv.selenium.Firefox
 
 val commonSettings: Seq[Setting[_]] = Seq(
   organization := "com.github.lionelfleury",
-  version := "0.1.1-SNAPSHOT",
+  version := "0.1.2-SNAPSHOT",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8")
 )
 
@@ -23,12 +23,12 @@ lazy val `scalajs-callgraph` = (project in file(".")).
   settings(
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
-      "org.singlespaced" %%% "scalajs-d3" % "0.3.1",
+      "org.singlespaced" %%% "scalajs-d3" % "0.3.3",
       "org.scala-js" %% "scalajs-env-selenium" % "0.1.2",
-      "com.lihaoyi" %%% "upickle" % "0.3.8",
-      "com.lihaoyi" %%% "scalatags" % "0.5.4"),
+      "com.lihaoyi" %%% "upickle" % "0.4.0",
+      "com.lihaoyi" %%% "scalatags" % "0.5.5"),
     jsDependencies ++= Seq(
-      "org.webjars" % "d3js" % "3.5.12" / "3.5.12/d3.js",
+      "org.webjars" % "d3js" % "3.5.16" / "3.5.16/d3.js",
       RuntimeDOM),
     jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox),
     scalaJSStage in Global := FastOptStage,
@@ -53,7 +53,7 @@ lazy val `sbt-scalajs-callgraph-utils` = (crossProject in file("sbt-scalajs-call
   settings(commonSettings: _*).
   settings(
     crossScalaVersions := Seq("2.10.6", "2.11.8"),
-    libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.3.8"
+    libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.4.0"
   )
 
 lazy val utilsJS = `sbt-scalajs-callgraph-utils`.js

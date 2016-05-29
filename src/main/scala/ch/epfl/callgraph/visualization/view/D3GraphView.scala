@@ -1,42 +1,30 @@
 package ch.epfl.callgraph.visualization.view
 
 import ch.epfl.callgraph.visualization.controller.D3GraphController
-import ch.epfl.callgraph.visualization.model.Decoder
 import ch.epfl.callgraph.visualization.model.D3GraphModel._
+import ch.epfl.callgraph.visualization.model.Decoder
 import org.scalajs.dom
+import org.scalajs.dom.Event
 import org.singlespaced.d3js.Ops._
-import org.singlespaced.d3js.svg.Line
-import org.singlespaced.d3js.{DragEvent, d3}
+import org.singlespaced.d3js.{DragEvent, Selection, d3}
 
 import scala.scalajs.js
 
-/**
-  * A D3JS class modeling our graph.
-  * Each node has a name, and a group, as well as data, which points to the actual Utils.Node containing the
-  * relevant information.
-  */
+
 class D3GraphView {
+  
+  private val d3d = js.Dynamic.global.d3 // A dynamic fallback
+  private val width = 400.0
+  private val height = 300.0
 
-  // For dynamic operations (when the binder (d3js) doesn't know)
-  val d3d = js.Dynamic.global.d3
-  val width = 400.0
-  val height = 300.0
-
-  // Init svg
-  val svg = d3.select("#main")
+  // Init svg to be responsive when window resizes
+  private val svg = d3.select("#main")
     .append("svg")
-    .attr("viewBox", "0 0 " + width + " " + height )
+    .attr("viewBox", "0 0 " + width + " " + height)
     .attr("preserveAspectRatio", "xMidYMid meet")
     .attr("pointer-events", "all")
     .on("click", (e: dom.EventTarget) => ContextMenu.hide())
     .call(d3.behavior.zoom().on("zoom", rescale _))
-
-  // rescale g
-  def rescale(d: dom.EventTarget, i: Double): Unit = {
-    val trans = d3d.event.translate
-    val scale = d3d.event.scale
-    vis.attr("transform", "translate(" + trans + ")" + " scale(" + scale + ")")
-  }
 
   // Arrow style for links
   svg.append("svg:defs").selectAll("marker")
@@ -52,25 +40,45 @@ class D3GraphView {
     .append("svg:path")
     .attr("d", "M0,-5L10,0L0,5")
 
-  val vis = svg.append("svg:g")
+  // Init the visual part
+  private val vis = svg.append("svg:g")
+
+  private def rescale(d: dom.EventTarget, i: Double): Unit = {
+    val trans = d3d.event.translate
+    val scale = d3d.event.scale
+    vis.attr("transform", "translate(" + trans + ")" + " scale(" + scale + ")")
+  }
+
+  private val path = (d: GraphLink) => {
+    val x1 = d.source.x.fold(0.0)(identity)
+    val x2 = d.target.x.fold(0.0)(identity)
+    val y1 = d.source.y.fold(0.0)(identity)
+    val y2 = d.target.y.fold(0.0)(identity)
+    val dx = x2 - x1
+    val dy = y2 - y1
+    val dr = Math.sqrt(dx * dx + dy * dy)
+    "M" + x1 + "," + y1 + "A" + dr + "," + dr + " 0 0,1 " + x2 + "," + y2
+  }
 
   // Init force layout
-  val force = d3.layout.force[GraphNode, GraphLink]()
+  private val force = d3.layout.force[GraphNode, GraphLink]()
     .size((width, height))
     .charge(-400)
     .linkDistance(100)
 
-  // Transform a line to a Path
-  def line: Line[GraphNode] = d3.svg.line()
-    .x((d: GraphNode) => d.x.fold(0.0)(identity))
-    .y((d: GraphNode) => d.y.fold(0.0)(identity))
-
-  // Convert a Link into a Path
-  def lineData: (GraphLink) => String =
-    (d: GraphLink) => line(js.Array(d.source, d.target))
+  private val tick: (Event) => Unit = (_: dom.Event) => {
+    vis.selectAll[GraphLink](".link")
+      .attr("d", path)
+    vis.selectAll[GraphNode]("text")
+      .attr("x", (d: GraphNode) => d.x)
+      .attr("y", (d: GraphNode) => d.y)
+    vis.selectAll[GraphNode]("circle")
+      .attr("cx", (d: GraphNode) => d.x)
+      .attr("cy", (d: GraphNode) => d.y)
+  }
 
   // Draging nodes
-  val node_drag = d3.behavior.drag[GraphNode]()
+  private val node_drag = d3.behavior.drag[GraphNode]()
     .on("dragstart", (d: GraphNode, _: Double) => {
       d3d.event.sourceEvent.stopPropagation()
       force.stop()
@@ -88,18 +96,12 @@ class D3GraphView {
       force.resume()
     })
 
-  // Motion of the elements
-  def tick(e: dom.Event): Unit = {
-    vis.selectAll[GraphLink](".link")
-      .attr("d", lineData)
-    vis.selectAll[GraphNode]("text")
-      .attr("x", (d: GraphNode) => d.x)
-      .attr("y", (d: GraphNode) => d.y)
-    vis.selectAll[GraphNode]("circle")
-      .attr("cx", (d: GraphNode) => d.x)
-      .attr("cy", (d: GraphNode) => d.y)
-  }
-
+  /**
+    * Update the graph with the given data.
+    *
+    * @param nodes the nodes
+    * @param links the links
+    */
   def update(nodes: js.Array[GraphNode], links: js.Array[GraphLink]): Unit = {
     var link = vis.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
     var node = vis.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
@@ -114,11 +116,12 @@ class D3GraphView {
       .call(node_drag)
     node.append("circle")
       .attr("r", 5)
-      .attr("fill", (d: GraphNode) =>
-        if (d.data.nonExistent) "gray"
+      .attr("fill", (d: GraphNode) => {
+        if (d.data.nonExistent) "white"
         else if (d.data.isExported) "green"
         else if (d.data.isReachable) "blue"
-        else "red")
+        else "red"
+      })
     node.append("text")
       .attr("dx", 10)
       .attr("dy", ".35em")
@@ -135,7 +138,7 @@ class D3GraphView {
     force
       .nodes(nodes)
       .links(links)
-      .on("tick", tick _)
+      .on("tick", tick)
       .start()
   }
 
@@ -153,6 +156,7 @@ class D3GraphView {
       D3GraphController.expandAllTo(n)
   }
 
+  // This parts relies on the Context Menu
   var selectedNode: Option[GraphNode] = None
 
   def openContextMenu(n: GraphNode): Unit = {
