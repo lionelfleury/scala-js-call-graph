@@ -1,40 +1,15 @@
-body {
-    min-width: 800px;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-y: hidden;
-}
-
 #header {
     background-color:black;
     color:white;
     text-align:center;
-    padding:5px;
 }
 #nav {
+    width:25%;
     background-color:#eeeeee;
-    width:20%;
-    float:left;
-    padding:5px;
-    height: 100vh;
 }
-
 #main {
-    display: inline-block;
-    position: relative;
-    width: 78%;
-    padding-bottom: 100%;
-    vertical-align: top;
-    overflow: hidden;
+    width:75%;
 }
-#main > svg {
-    display: inline-block;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
 .node {
   cursor: pointer;
   stroke: #3182bd;
@@ -50,7 +25,6 @@ body {
   stroke: #A0A0A0;
   stroke-width: 1.5px;
 }
-
 .context-menu {
     display: none;
     position: absolute;
@@ -61,38 +35,31 @@ body {
     border: solid 1px #dfdfdf;
     box-shadow: 1px 1px 2px #cfcfcf;
 }
-
 .context-menu--active {
     display: block;
 }
-
 .context-menu__items {
     list-style: none;
     margin: 0;
     padding: 0;
 }
-
 .context-menu__item {
     display: block;
     margin-bottom: 4px;
 }
-
 .context-menu__item:last-child {
     margin-bottom: 0;
 }
-
 .context-menu__link {
     display: block;
     padding: 4px 12px;
     color: #0066aa;
     text-decoration: none;
 }
-
 .context-menu__link:hover {
     color: #fff;
     background-color: #0066aa;
 }
-
 .layers a.active {
     text-decoration: none;
     pointer-events: none;

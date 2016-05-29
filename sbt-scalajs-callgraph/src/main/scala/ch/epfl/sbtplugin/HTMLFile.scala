@@ -21,9 +21,10 @@ object HTMLFile {
        |<title>Scala.js Call Graph Visualization</title>
        |<link rel="stylesheet" type="text/css" href="${pathCSS}style.css">
        |<body>
-       |<div id="header"><h1>Scala.js Call Graph Visualization</h1></div>
-       |<div id="nav" style="overflow:auto"></div>
-       |<div id="main" style="overflow:auto"></div>
+       |<table width="100%">
+       |<tr><td id="header" colspan=2><h1>Scala.js Call Graph Visualization</h1></td></tr>
+       |<tr valign=top><td id="nav"></td><td id="main"></td></tr>
+       |</table>
        |<div id="callgraph" style="display: none;">$graph</div>
        |<script type="text/javascript" src="$jsOpt"></script>
        |<script type="text/javascript" src="$jsDeps"></script>

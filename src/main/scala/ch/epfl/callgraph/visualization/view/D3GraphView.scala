@@ -19,22 +19,17 @@ object D3GraphView {
 
   // For dynamic operations (when the binder (d3js) doesn't know)
   val d3d = js.Dynamic.global.d3
-  val width = 800.0
-  val height = 600.0
+  val width = 600.0
+  val height = 400.0
 
   // Init svg
   val svg = d3.select("#main")
     .append("svg")
-    .attr("preserveAspectRatio", "xMinYMin meet")
-    .attr("viewBox", "0 0 " + width + " " + height)
-    .append("svg:g")
+    .attr("viewBox", "0 0 " + width + " " + height )
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .attr("pointer-events", "all")
     .on("click", (e: dom.EventTarget) => ContextMenu.hide())
     .call(d3.behavior.zoom().on("zoom", rescale _))
-
-  svg.append("svg:rect") // To be able to pan and zoom from blank space
-    .attr("width", width)
-    .attr("height", height)
-    .attr("fill", "transparent")
 
   // rescale g
   def rescale(d: dom.EventTarget, i: Double): Unit = {
