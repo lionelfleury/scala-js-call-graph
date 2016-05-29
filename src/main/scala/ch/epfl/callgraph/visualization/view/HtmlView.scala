@@ -2,17 +2,17 @@ package ch.epfl.callgraph.visualization.view
 
 import ch.epfl.callgraph.utils.Utils.CallGraph
 import ch.epfl.callgraph.visualization.controller.{D3GraphController, Layers}
-import org.scalajs.dom.KeyboardEvent
+import org.scalajs.dom.{KeyboardEvent, MouseEvent}
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
 import org.scalajs.{dom => sdom}
 import upickle.{default => upickle}
 
+import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scalatags.JsDom.all._
 
 object HtmlView extends JSApp {
-  val fileInput = input(`type` := "file").render
   val box = input(`type` := "text", placeholder := "Type here and press enter!").render
   val exported = input(`type` := "checkbox", checked).render
   val reachable = input(`type` := "checkbox", checked).render
@@ -21,31 +21,22 @@ object HtmlView extends JSApp {
 
   val searchField = div(box, div(" Only exported:", exported), div(" Only reachable:", reachable)).render
 
-  box.onkeyup = (e: KeyboardEvent) => if (e.keyCode == 13) searchList(e)
-  exported.onclick = searchList _
-  reachable.onclick = searchList _
+  box.onkeyup = (e: KeyboardEvent) => if (e.keyCode == 13) searchList()
+  exported.onclick = (e: MouseEvent) => searchList()
+  reachable.onclick = (e: MouseEvent) => searchList()
 
   def main(): Unit = {
-    val target = sdom.document.getElementById("nav").asInstanceOf[Div]
-    target.appendChild(fileInput)
-
-    fileInput.onchange = (evt: sdom.Event) => {
-      evt.stopImmediatePropagation()
-      target.innerHTML = ""
-      target.appendChild(div(searchField, layersHTML, output, ContextMenu.nav).render)
-      val reader = new FileReader()
-      reader.readAsText(fileInput.files(0))
-      reader.onload = (e: sdom.UIEvent) => {
-        val text = reader.result.asInstanceOf[String]
-        val callGraph = upickle.read[CallGraph](text)
-        D3GraphController.init(callGraph)
-        searchList(e)
-        showLayers()
-      }
-    }
+    val target = sdom.document.getElementById("nav")
+    target.innerHTML = ""
+    target.appendChild(div(searchField, layersHTML, output, ContextMenu.nav).render)
+    val text = sdom.document.getElementById("callgraph").innerHTML
+    val callGraph = upickle.read[CallGraph](text)
+    D3GraphController.init(callGraph)
+    searchList()
+    showLayers()
   }
 
-  def searchList(e: sdom.Event) = {
+  def searchList() = {
     output.innerHTML = ""
 
     val values = box.value.split(' ')
