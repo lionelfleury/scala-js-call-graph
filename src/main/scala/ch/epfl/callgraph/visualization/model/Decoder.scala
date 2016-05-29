@@ -1,6 +1,7 @@
 package ch.epfl.callgraph.visualization.model
 
 import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
+import org.scalajs.core.ir.Types.{ArrayType, ClassType, ReferenceType}
 
 /**
   * Created by Lionel on 07/05/16.
@@ -66,28 +67,53 @@ object Decoder {
   private def isConstructorName(name: String): Boolean =
     name.startsWith("init___")
 
+//  def decodeReferenceType(encodedName: String): ReferenceType = {
+//    val arrayDepth = encodedName.indexWhere(_ != 'A')
+//    if (arrayDepth == 0)
+//      ClassType(encodedName)
+//    else
+//      ArrayType(encodedName.substring(arrayDepth), arrayDepth)
+//  }
+
   def decodeMethodName(encodedName: String): String = {
-    val (simpleName, privateAndSigString) =
-      if (isConstructorName(encodedName)) {
-        val privateAndSigString =
-          if (encodedName == "init___") ""
-          else encodedName.stripPrefix("init___") + "__"
-        ("<init>", privateAndSigString)
-      } else {
-        val pos = encodedName.indexOf("__")
-        if (pos != -1) {
-          val pos2 =
-            if (!encodedName.substring(pos + 2).startsWith("p")) pos
-            else encodedName.indexOf("__", pos + 2)
-          (encodedName.substring(0, pos), encodedName.substring(pos2 + 2))
-        } else {
-          (encodedName, "")
-        }
-      }
+    val (simpleName, privateAndSigString) = if (isConstructorName(encodedName)) {
+      val privateAndSigString =
+        if (encodedName == "init___") ""
+        else encodedName.stripPrefix("init___") + "__"
+      ("<init>", privateAndSigString)
+    } else {
+      val pos = encodedName.indexOf("__")
+      val pos2 =
+        if (!encodedName.substring(pos + 2).startsWith("p")) pos
+        else encodedName.indexOf("__", pos + 2)
+      (encodedName.substring(0, pos), encodedName.substring(pos2 + 2))
+    }
+
+    // -1 preserves trailing empty strings
+    val parts = privateAndSigString.split("__", -1).toSeq
+    val paramsAndResultStrings =
+      if (parts.headOption.exists(_.startsWith("p"))) parts.tail
+      else parts
+
+    val paramStrings :+ resultString = paramsAndResultStrings
+
+//    val paramTypes = paramStrings.map(decodeReferenceType).toList
+//    val resultType =
+//      if (resultString == "") None // constructor or reflective proxy
+//      else Some(decodeReferenceType(resultString))
 
     val exportedPrefix = "$$js$exported$meth$"
-    if (simpleName.startsWith(exportedPrefix)) "<" + simpleName.replace(exportedPrefix, "") + ">"
-    else simpleName
+    val newSimpleName =
+      if (simpleName.startsWith(exportedPrefix)) "<" + simpleName.replace(exportedPrefix, "") + ">"
+      else simpleName
+
+//    def typeDisplayName(tpe: ReferenceType): String = tpe match {
+//      case ClassType(encodedName) => decodeClassName(encodedName)
+//      case ArrayType(base, dimensions) => "[" * dimensions + decodeClassName(base)
+//    }
+
+    newSimpleName /* + "(" + paramTypes.map(typeDisplayName).mkString(",") + ")" +
+      resultType.fold("")(typeDisplayName) */
   }
 
   def splitEncodedName(fullEncodedName: String): (String, String) = {
@@ -106,7 +132,12 @@ object Decoder {
 
   def getDisplayName(node: Node): String = node match {
     case classNode: ClassNode => decodeClassName(classNode.encodedName)
-    case methodNode: MethodNode => decodeClassName(methodNode.className) + "." + decodeMethodName( methodNode.encodedName)
+    case methodNode: MethodNode =>
+      val displayName =
+        if (methodNode.isExported) methodNode.encodedName
+        else decodeMethodName(methodNode.encodedName)
+
+      decodeClassName(methodNode.className) + "." + displayName
   }
 
   def shortenDisplayName(displayName: String): String = {

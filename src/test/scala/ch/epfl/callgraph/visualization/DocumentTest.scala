@@ -35,7 +35,7 @@ class DocumentTest {
     D3GraphController.init(callgraph)
     HtmlView.showLeftNav
     HtmlView.showLayers
-    HtmlView.searchList(null)
+    HtmlView.searchList
   }
 
   @Test def testInitialDOM(): Unit = {

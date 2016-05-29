@@ -91,6 +91,7 @@ object Layers {
   def reset = {
     layers.clear()
     s = 0
+    d3GraphView.remove
     d3GraphView = new D3GraphView()
   }
 
