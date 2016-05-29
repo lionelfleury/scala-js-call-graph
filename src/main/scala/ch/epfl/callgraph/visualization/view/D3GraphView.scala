@@ -15,7 +15,7 @@ import scala.scalajs.js
   * Each node has a name, and a group, as well as data, which points to the actual Utils.Node containing the
   * relevant information.
   */
-object D3GraphView {
+class D3GraphView {
 
   // For dynamic operations (when the binder (d3js) doesn't know)
   val d3d = js.Dynamic.global.d3
@@ -139,6 +139,15 @@ object D3GraphView {
       .start()
   }
 
+  def reset: Unit = {
+    var link = vis.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
+    var node = vis.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
+
+    // NB: the function arg is crucial here! nodes are not known by index!
+    node.exit().remove()
+    link.exit().remove()
+  }
+
   def click(n: GraphNode): Unit = {
     if (d3d.event == null || !js.DynamicImplicits.truthValue(d3d.event.defaultPrevented))
       D3GraphController.expandAllTo(n)
@@ -152,6 +161,8 @@ object D3GraphView {
     ContextMenu.show(mouseEvent.clientX, mouseEvent.clientY)
     mouseEvent.preventDefault()
   }
+
+  def remove = d3.select("#main > svg").remove()
 
   ContextMenu.setNewLayerCallback((e: dom.Event) => selectedNode foreach { node =>
     D3GraphController.initNewLayer(Decoder.getFullEncodedName(node.data))

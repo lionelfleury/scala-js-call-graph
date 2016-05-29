@@ -36,6 +36,12 @@ object HtmlView extends JSApp {
     showLayers()
   }
 
+  def showLeftNav = {
+    val target = sdom.document.getElementById("nav").asInstanceOf[Div]
+    target.innerHTML = ""
+    target.appendChild(div(searchField, layersHTML, output, ContextMenu.nav).render)
+  }
+
   def searchList() = {
     output.innerHTML = ""
 

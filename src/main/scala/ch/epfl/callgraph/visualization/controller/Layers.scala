@@ -11,12 +11,12 @@ import scala.scalajs.js.JSConverters.genTravConvertible2JSRichGenTrav
 import scala.scalajs.js.ThisFunction
 import scalatags.JsDom.all._
 
-final class Layer(val name: String) {
+final class Layer(val name: String, d3GraphView: D3GraphView) {
   private val nodes = mutable.HashSet[GraphNode]()
   private val links = mutable.HashSet[GraphLink]()
 
   def update(): Unit = {
-    D3GraphView.update(getNodes, getLinks)
+    d3GraphView.update(getNodes, getLinks)
     HtmlView.showLayers()
   }
 
@@ -57,6 +57,7 @@ final class Layer(val name: String) {
 object Layers {
   private var s = 0
   private val layers = mutable.ArrayBuffer[Layer]()
+  private var d3GraphView = new D3GraphView()
 
   def toHTMLList = {
     def changeLayer: ThisFunction = (s: HTMLSelectElement) => {
@@ -76,7 +77,7 @@ object Layers {
   }
 
   def addLayer(name: String = "layer" + (layers.size + 1)): Layer = {
-    layers += new Layer(name)
+    layers += new Layer(name, d3GraphView)
     last
   }
 
@@ -86,4 +87,12 @@ object Layers {
     setCurrent(layers.size - 1)
     current
   }
+
+  def reset = {
+    layers.clear()
+    s = 0
+    d3GraphView.remove
+    d3GraphView = new D3GraphView()
+  }
+
 }
