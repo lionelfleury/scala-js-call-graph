@@ -1,4 +1,5 @@
 # Call graph visualisation tool for Scala.js
+![alt tag](https://raw.githubusercontent.com/lionelfleury/scala-js-call-graph/release/screenshot.png)
 Add the following to your project definition files:
 
 `<root>/project/plugins.sbt`
