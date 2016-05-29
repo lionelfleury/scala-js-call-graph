@@ -25,8 +25,8 @@ object D3GraphView {
   // Init svg
   val svg = d3.select("#main")
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("preserveAspectRatio", "xMinYMin meet")
+    .attr("viewBox", "0 0 " + width + " " + height)
     .append("svg:g")
     .on("click", (e: dom.EventTarget) => ContextMenu.hide())
     .call(d3.behavior.zoom().on("zoom", rescale _))
