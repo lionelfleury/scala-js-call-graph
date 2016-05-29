@@ -45,16 +45,18 @@ object HtmlView extends JSApp {
   def searchList() = {
     output.innerHTML = ""
 
+    val limit = 25
     val values = box.value.split(' ')
-    val result = D3GraphController.search(values, exported.checked, reachable.checked).take(20)
+    val result = D3GraphController.search(values, exported.checked, reachable.checked).take(limit + 1)
+    val overflow = if (result.size > limit) "more results..." else ""
 
     def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
 
-    val list = ul(result map {
-      case (shortName, displayName, encodedName) =>
-        li(a(shortName, style := "cursor: pointer;"), title := displayName, onclick := view(encodedName))
-    }).render
-    output.appendChild(list)
+    val list = result.take(limit) map { case (shortName, displayName, encodedName) =>
+      li(a(shortName), title := displayName, onclick := view(encodedName))
+    }
+    val nav = ul(list, i(overflow)).render
+    output.appendChild(nav)
   }
 
   def showLayers(): Unit = {

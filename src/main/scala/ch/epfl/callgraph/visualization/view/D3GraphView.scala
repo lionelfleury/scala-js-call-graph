@@ -19,8 +19,8 @@ class D3GraphView {
 
   // For dynamic operations (when the binder (d3js) doesn't know)
   val d3d = js.Dynamic.global.d3
-  val width = 600.0
-  val height = 400.0
+  val width = 400.0
+  val height = 300.0
 
   // Init svg
   val svg = d3.select("#main")
