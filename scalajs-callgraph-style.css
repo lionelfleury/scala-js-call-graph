@@ -1,3 +1,11 @@
+body {
+    min-width: 800px;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-y: hidden;
+}
+
 #header {
     background-color:black;
     color:white;
@@ -6,16 +14,27 @@
 }
 #nav {
     background-color:#eeeeee;
-    height:800px;
-    width:300px;
+    width:20%;
     float:left;
     padding:5px;
+    height: 100vh;
 }
+
 #main {
-    width:800px;
-    float:left;
-    padding:10px;
+    display: inline-block;
+    position: relative;
+    width: 78%;
+    padding-bottom: 100%;
+    vertical-align: top;
+    overflow: hidden;
 }
+#main > svg {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 .node {
   cursor: pointer;
   stroke: #3182bd;
