@@ -7,7 +7,7 @@ unmanagedSourceDirectories in Compile ++= {
 }
 
 libraryDependencies ++= Seq(
-  "com.lihaoyi" %% "upickle" % "0.3.8",
+  "com.lihaoyi" %% "upickle" % "0.4.0",
   "org.scala-js" %% "scalajs-env-selenium" % "0.1.2"
 )
 
