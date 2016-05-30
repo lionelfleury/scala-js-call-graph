@@ -2,7 +2,7 @@ import org.scalajs.jsenv.selenium.Firefox
 
 val commonSettings: Seq[Setting[_]] = Seq(
   organization := "com.github.lionelfleury",
-  version := "0.1.2-SNAPSHOT",
+  version := "0.1.3-SNAPSHOT",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8")
 )
 
@@ -73,7 +73,7 @@ publishTo := {
 
 pomIncludeRepository := { _ => false }
 
-pomExtra := {
+pomExtra in Global := {
   <url>https://github.com/lionelfleury/scala-js-call-graph</url>
     <licenses>
       <license>
