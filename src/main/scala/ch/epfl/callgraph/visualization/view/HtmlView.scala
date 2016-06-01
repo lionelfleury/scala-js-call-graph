@@ -1,7 +1,8 @@
 package ch.epfl.callgraph.visualization.view
 
-import ch.epfl.callgraph.utils.Utils.CallGraph
+import ch.epfl.callgraph.utils.Utils._
 import ch.epfl.callgraph.visualization.controller.{D3GraphController, Layers}
+import ch.epfl.callgraph.visualization.model.Decoder
 import org.scalajs.dom.{KeyboardEvent, MouseEvent}
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
@@ -43,9 +44,15 @@ object HtmlView extends JSApp {
   }
 
   def showErrors(callGraph: CallGraph) = {
+    def view(encodedName: String) = (e: sdom.MouseEvent) => {println(encodedName); D3GraphController.initNewLayer(encodedName) }
     val target = sdom.document.getElementById("errors").asInstanceOf[Div]
     target.innerHTML = ""
-    val list = callGraph.errors.map(x => li(x.from))
+    val list = callGraph.errors.map(x => x match {
+      case MissingMethodInfo(encodedName: String, className: String, from: String) =>
+        li("Missing Method:", a(encodedName, onclick := view(Decoder.getFullEncodedName(className, encodedName))), s"in: $className, called from: $from")
+      case MissingClassInfo(encodedName: String, from: String) =>
+        li(s"Missing class: $encodedName called from: $from")
+    })
     target.appendChild(ul(list:_*).render)
   }
 
@@ -63,7 +70,7 @@ object HtmlView extends JSApp {
     val result = D3GraphController.search(values, exported.checked, reachable.checked).take(limit + 1)
     val overflow = if (result.size > limit) "more results..." else ""
 
-    def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
+    def view(encodedName: String) = (e: sdom.MouseEvent) => { println(encodedName); D3GraphController.initNewLayer(encodedName) }
 
     val list = result.take(limit) map { case (shortName, displayName, encodedName) =>
       li(a(shortName), title := displayName, onclick := view(encodedName))
