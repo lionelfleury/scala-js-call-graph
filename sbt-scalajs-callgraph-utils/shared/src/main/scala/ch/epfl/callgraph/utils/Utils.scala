@@ -30,7 +30,18 @@ object Utils {
                               methodsCalled: Map[String, Seq[String]],
                               calledFrom: Map[String, Seq[String]]) extends Node
 
-  final case class CallGraph(classes: Seq[ClassNode] = Seq.empty)
+  sealed trait ErrorInfo {
+    def from: String
+  }
+
+  @key("MM")
+  final case class MissingMethodInfo(encodedName: String, className: String, from: String) extends ErrorInfo
+
+
+  @key("MC")
+  final case class MissingClass(className: String, from: String) extends ErrorInfo
+
+  final case class CallGraph(classes: Seq[ClassNode] = Seq.empty, errors: Seq[ErrorInfo] = Seq.empty)
 
   /**
     * Unfortunately there is an issue with uPickle on Scala 2.10.
@@ -107,4 +118,25 @@ object Utils {
     }
   }
 
+  object MissingMethodInfo {
+    implicit val missingMethodWriter = upickle.default.Writer[MissingMethodInfo] {
+      case t => Js.Obj(
+        ("e", Js.Str(t.encodedName)),
+        ("c", Js.Str(t.className)),
+        ("f", Js.Str(t.from))
+      )
+    }
+
+    implicit val missingMethodReader = upickle.default.Reader[MissingMethodInfo] {
+      case Js.Obj(
+      (_, encodedName),
+      (_, className),
+      (_, from)
+      ) => new MissingMethodInfo(
+        upickle.default.readJs[String](encodedName),
+        upickle.default.readJs[String](className),
+        upickle.default.readJs[String](from)
+      )
+    }
+  }
 }

@@ -25,6 +25,14 @@ object Graph {
     new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, ci.isNeededAtAll, superClass, interfaces, methods)
   }
 
+  private def toMissingMethodInfo(mi: MethodInfo, from: From) : MissingMethodInfo = {
+    val fromText = from match {
+      case FromMethod(method) => method.encodedName
+      case _ => ""
+    }
+    new MissingMethodInfo(mi.encodedName, mi.owner.encodedName, fromText)
+  }
+
   /**
     * Convert a sequence of Analysis.From to Map from class to method
     *
@@ -74,6 +82,9 @@ object Graph {
     val classInfos = analysis.classInfos.values
     val callsMap = reverseEdges(classInfos)
     val classes = mutable.Set[ClassNode]()
+    val errors = analysis.errors.collect {
+      case MissingMethod(info: MethodInfo, from: From) => toMissingMethodInfo(info, from)
+    }
 
     for (classInfo <- classInfos) {
       val methodInfos = classInfo.methodInfos.values ++ classInfo.staticMethodInfos.values
@@ -82,7 +93,7 @@ object Graph {
       }
       classes += toClassNode(classInfo, methods.toSeq)
     }
-    val graph = CallGraph(classes.toSeq)
+    val graph = CallGraph(classes.toSeq, errors)
     upickle.default.write(graph)
   }
 
