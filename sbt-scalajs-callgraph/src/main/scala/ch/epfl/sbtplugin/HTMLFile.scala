@@ -23,7 +23,8 @@ object HTMLFile {
        |<body>
        |<table width="100%">
        |<tr><td id="header" colspan=2><h1>Scala.js Call Graph Visualization</h1></td></tr>
-       |<tr valign=top><td id="nav"></td><td id="main"></td></tr>
+       |<tr valign=top><td id="nav" rowspan="2"></td><td id="main"></td></tr>
+       |<tr><td id="errors"></td></tr>
        |</table>
        |<div id="callgraph" style="display: none;">$graph</div>
        |<script type="text/javascript" src="$jsOpt"></script>

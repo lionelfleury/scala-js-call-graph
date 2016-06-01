@@ -34,6 +34,19 @@ object HtmlView extends JSApp {
     D3GraphController.init(callGraph)
     searchList()
     showLayers()
+
+    callGraph.errors.foreach(x => println(x.from))
+
+    if(callGraph.errors.nonEmpty) {
+      showErrors(callGraph)
+    }
+  }
+
+  def showErrors(callGraph: CallGraph) = {
+    val target = sdom.document.getElementById("errors").asInstanceOf[Div]
+    target.innerHTML = ""
+    val list = callGraph.errors.map(x => li(x.from))
+    target.appendChild(ul(list:_*).render)
   }
 
   def showLeftNav = {

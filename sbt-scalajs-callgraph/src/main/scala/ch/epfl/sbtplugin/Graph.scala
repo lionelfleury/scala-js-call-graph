@@ -1,7 +1,5 @@
 package ch.epfl.sbtplugin
 
-import java.io.{BufferedWriter, File, FileWriter}
-
 import ch.epfl.callgraph.utils.Utils._
 import org.scalajs.core.tools.linker.analyzer.Analysis
 import org.scalajs.core.tools.linker.analyzer.Analysis._
@@ -31,6 +29,14 @@ object Graph {
       case _ => ""
     }
     new MissingMethodInfo(mi.encodedName, mi.owner.encodedName, fromText)
+  }
+
+  private def toMissingClassInfo(mi: ClassInfo, from: From) : MissingClassInfo = {
+    val fromText = from match {
+      case FromMethod(method) => method.encodedName
+      case _ => ""
+    }
+    new MissingClassInfo(mi.encodedName, fromText)
   }
 
   /**
@@ -84,6 +90,7 @@ object Graph {
     val classes = mutable.Set[ClassNode]()
     val errors = analysis.errors.collect {
       case MissingMethod(info: MethodInfo, from: From) => toMissingMethodInfo(info, from)
+      case MissingClass(info: ClassInfo, from: From) => toMissingClassInfo(info, from)
     }
 
     for (classInfo <- classInfos) {

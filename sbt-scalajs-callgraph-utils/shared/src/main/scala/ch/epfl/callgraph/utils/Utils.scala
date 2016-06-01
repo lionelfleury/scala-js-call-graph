@@ -37,9 +37,8 @@ object Utils {
   @key("MM")
   final case class MissingMethodInfo(encodedName: String, className: String, from: String) extends ErrorInfo
 
-
   @key("MC")
-  final case class MissingClass(className: String, from: String) extends ErrorInfo
+  final case class MissingClassInfo(encodedName: String, from: String) extends ErrorInfo
 
   final case class CallGraph(classes: Seq[ClassNode] = Seq.empty, errors: Seq[ErrorInfo] = Seq.empty)
 
@@ -135,6 +134,26 @@ object Utils {
       ) => new MissingMethodInfo(
         upickle.default.readJs[String](encodedName),
         upickle.default.readJs[String](className),
+        upickle.default.readJs[String](from)
+      )
+    }
+  }
+
+
+  object MissingClassInfo {
+    implicit val missingMethodWriter = upickle.default.Writer[MissingClassInfo] {
+      case t => Js.Obj(
+        ("e", Js.Str(t.encodedName)),
+        ("f", Js.Str(t.from))
+      )
+    }
+
+    implicit val missingMethodReader = upickle.default.Reader[MissingClassInfo] {
+      case Js.Obj(
+      (_, encodedName),
+      (_, from)
+      ) => new MissingClassInfo(
+        upickle.default.readJs[String](encodedName),
         upickle.default.readJs[String](from)
       )
     }
