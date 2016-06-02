@@ -88,6 +88,7 @@ object D3GraphController {
         methodNode <- filter(className, methodName).lastOption
         newMethodNode <- expandTo(target)(methodNode)
       } expandRecursive(newMethodNode)
+
       layer.update()
     case _ => // TODO: classNode
   }
@@ -137,7 +138,13 @@ object D3GraphController {
   }
 
   private def filter(className: String, methodName: String): Seq[MethodNode] = {
-    callGraph.classes.withFilter(_.encodedName == className)
-      .flatMap(_.methods.filter(_.encodedName == methodName))
+    if(className == "core"){
+      Seq[MethodNode]()
+    } else if(className == "exports") {
+      Seq[MethodNode]()
+    } else {
+      callGraph.classes.withFilter(_.encodedName == className)
+        .flatMap(_.methods.filter(_.encodedName == methodName))
+    }
   }
 }

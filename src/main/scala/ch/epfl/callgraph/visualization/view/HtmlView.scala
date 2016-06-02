@@ -44,7 +44,7 @@ object HtmlView extends JSApp {
   }
 
   def showErrors(callGraph: CallGraph) = {
-    def view(encodedName: String) = (e: sdom.MouseEvent) => {println(encodedName); D3GraphController.initNewLayer(encodedName) }
+    def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
     val target = sdom.document.getElementById("errors").asInstanceOf[Div]
     target.innerHTML = ""
     val list = callGraph.errors.map(x => x match {
@@ -70,7 +70,7 @@ object HtmlView extends JSApp {
     val result = D3GraphController.search(values, exported.checked, reachable.checked).take(limit + 1)
     val overflow = if (result.size > limit) "more results..." else ""
 
-    def view(encodedName: String) = (e: sdom.MouseEvent) => { println(encodedName); D3GraphController.initNewLayer(encodedName) }
+    def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
 
     val list = result.take(limit) map { case (shortName, displayName, encodedName) =>
       li(a(shortName), title := displayName, onclick := view(encodedName))

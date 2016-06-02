@@ -12,6 +12,10 @@ object Utils {
     def isReachable: Boolean
   }
 
+  sealed trait ErrorInfo {
+    def from: String
+  }
+
   @key("C")
   final case class ClassNode(encodedName: String,
                              isExported: Boolean,
@@ -29,10 +33,6 @@ object Utils {
                               className: String,
                               methodsCalled: Map[String, Seq[String]],
                               calledFrom: Map[String, Seq[String]]) extends Node
-
-  sealed trait ErrorInfo {
-    def from: String
-  }
 
   @key("MM")
   final case class MissingMethodInfo(encodedName: String, className: String, from: String) extends ErrorInfo
@@ -139,16 +139,15 @@ object Utils {
     }
   }
 
-
   object MissingClassInfo {
-    implicit val missingMethodWriter = upickle.default.Writer[MissingClassInfo] {
+    implicit val missingClassWriter = upickle.default.Writer[MissingClassInfo] {
       case t => Js.Obj(
         ("e", Js.Str(t.encodedName)),
         ("f", Js.Str(t.from))
       )
     }
 
-    implicit val missingMethodReader = upickle.default.Reader[MissingClassInfo] {
+    implicit val missingClassReader = upickle.default.Reader[MissingClassInfo] {
       case Js.Obj(
       (_, encodedName),
       (_, from)
