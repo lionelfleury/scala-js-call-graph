@@ -11,6 +11,7 @@ object Decoder {
 
   /**
     * Return a decoded method name, if the method is exported, will show it between <>
+    *
     * @param encodedName the name of the method to decode
     * @return the decoded name
     */
@@ -24,6 +25,7 @@ object Decoder {
 
   /**
     * Split a fully encoded name (class + method)
+    *
     * @param fullEncodedName the full name to decode
     * @return a tuple containing the class and the method name
     */
@@ -36,7 +38,8 @@ object Decoder {
 
   /**
     * Create a full encoded name (class + method)
-    * @param className the name of the class
+    *
+    * @param className  the name of the class
     * @param methodName the name of the method
     * @return the concatenation of both arguments
     */
@@ -44,6 +47,7 @@ object Decoder {
 
   /**
     * Returns the fully encoded name, works on class and methods
+    *
     * @param node
     * @return the full encoded name of the node
     */
@@ -54,6 +58,7 @@ object Decoder {
 
   /**
     * Return the fully encoded name, but for ErrorInfo
+    *
     * @param error the error to look into
     * @return the full encoded name of the error target
     */
@@ -65,6 +70,7 @@ object Decoder {
   /**
     * Create the display name of the node
     * Remove useless data from method (argument type and return type)
+    *
     * @param node the targeted node
     * @return the display name
     */
@@ -80,16 +86,21 @@ object Decoder {
 
   /**
     * Return the display name of the target of an error
+    *
     * @param error the target error
     * @return the display name of the error's target
     */
   def getDisplayName(error: ErrorInfo): String = error match {
-    case missingClass: MissingClassInfo => Definitions.decodeClassName(missingClass.encodedName)
-    case missingMethod: MissingMethodInfo => Definitions.decodeClassName(missingMethod.className) + "." + missingMethod.encodedName
+    case missingClass: MissingClassInfo =>
+      Definitions.decodeClassName(missingClass.encodedName)
+    case missingMethod: MissingMethodInfo =>
+      val displayName = decodeMethodName(missingMethod.encodedName)
+      Definitions.decodeClassName(missingMethod.className) + "." + displayName
   }
 
   /**
     * Shorten the package name out of a display name
+    *
     * @param displayName the display name to shorten
     * @return Shortened name (one letter per package)
     */
@@ -103,6 +114,7 @@ object Decoder {
 
   /**
     * The full name of the node, including the parameters type and the return one
+    *
     * @param node the target node
     * @return the full name
     */
@@ -111,7 +123,6 @@ object Decoder {
       case node: MethodNode => {
         if (node.isExported) getDisplayName(node)
         else {
-
           val (simpleName, paramTypes, resultType) = org.scalajs.core.ir.Definitions.decodeMethodName(node.encodedName)
           Definitions.decodeClassName(node.className) + simpleName + "(" + paramTypes.map(typeDisplayName _).mkString(",") + ")" +
             resultType.fold("")(typeDisplayName)
@@ -123,11 +134,11 @@ object Decoder {
 
   def fullDisplayName(error: MissingMethodInfo) = {
     val (simpleName, paramTypes, resultType) = org.scalajs.core.ir.Definitions.decodeMethodName(error.encodedName)
-    error.className + simpleName + "(" + paramTypes.map(typeDisplayName _).mkString(",") + ")" + resultType.fold("")(typeDisplayName)
+    Definitions.decodeClassName(error.className) + simpleName + "(" + paramTypes.map(typeDisplayName _).mkString(",") + ")" + resultType.fold("")(typeDisplayName)
   }
 
   private def typeDisplayName(tpe: ReferenceType): String = tpe match {
-    case ClassType(encodedName)      => Definitions.decodeClassName(encodedName)
+    case ClassType(encodedName) => Definitions.decodeClassName(encodedName)
     case ArrayType(base, dimensions) => "[" * dimensions + Definitions.decodeClassName(base)
   }
 

@@ -12,7 +12,7 @@ class FileGenerator(graph: String, isDev: Boolean) {
   private val opt = if (isDev) "scalajs-callgraph-fastopt.js" else "scalajs-callgraph-opt.js"
   private val deps = "scalajs-callgraph-jsdeps.js"
   private val launcher = "scalajs-callgraph-launcher.js"
-  private val style = if (isDev) "../../../" else "" + "scalajs-callgraph-style.css"
+  private val style = (if (isDev) "../../../" else "") + "scalajs-callgraph-style.css"
 
   private lazy val content =
     s"""

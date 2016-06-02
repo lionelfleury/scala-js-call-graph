@@ -37,7 +37,7 @@ object HtmlView extends JSApp {
     searchList()
     showLayers()
 
-    if(callGraph.errors.nonEmpty) {
+    if (callGraph.errors.nonEmpty) {
       showErrors(callGraph)
     }
   }
@@ -46,38 +46,37 @@ object HtmlView extends JSApp {
     errors.innerHTML = ""
     def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
 
-    val mappedErrors = callGraph.errors.groupBy(x => x match {
-      case x : MissingMethodInfo => "methods"
-      case x : MissingClassInfo => "classes"
+    val mappedErrors = callGraph.errors groupBy {
+      case x: MissingMethodInfo => "methods"
+      case x: MissingClassInfo => "classes"
       case _ => "others"
-    })
+    }
 
     val methodErrors = mappedErrors.get("methods") match {
-      case Some(s) => s.collect (x => x match {
-        case x @ MissingMethodInfo(encodedName: String, className: String, from: String) =>
+      case Some(s) => s collect {
+        case x@MissingMethodInfo(encodedName: String, className: String, from: String) =>
           val displayName = Decoder.getDisplayName(x)
           val shortName = Decoder.shortenDisplayName(displayName)
           li(a(shortName, onclick := view(Decoder.getFullEncodedName(className, encodedName))), title := Decoder.fullDisplayName(x))
-      })
+      }
       case None => Seq()
     }
 
     val classErrors = mappedErrors.get("classes") match {
-      case Some(s) => s collect (x => x match {
-        case MissingClassInfo(encodedName: String, from: String) => {
+      case Some(s) => s collect {
+        case x@MissingClassInfo(encodedName: String, from: String) =>
           val displayName = Decoder.getDisplayName(x)
           val shortName = Decoder.shortenDisplayName(displayName)
           li(shortName)
-        }
-      })
+      }
       case None => Seq()
     }
 
     errors.appendChild(
-      if(methodErrors.nonEmpty || classErrors.nonEmpty) div(
+      if (methodErrors.nonEmpty || classErrors.nonEmpty) div(
         h4("Errors:"),
-        if(methodErrors.nonEmpty) div(h5("Missings methods"), ul(methodErrors:_*)) else div(),
-        if(classErrors.nonEmpty) div(h5("Missing classes"), ul(classErrors:_*)) else div(),
+        if (methodErrors.nonEmpty) div(h5("Missings methods"), ul(methodErrors: _*)) else div(),
+        if (classErrors.nonEmpty) div(h5("Missing classes"), ul(classErrors: _*)) else div(),
         id := "errors").render
       else div().render
     )
