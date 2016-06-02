@@ -88,6 +88,7 @@ object D3GraphController {
         methodNode <- filter(className, methodName).lastOption
         newMethodNode <- expandTo(target)(methodNode)
       } expandRecursive(newMethodNode)
+
       layer.update()
     case _ => // TODO: classNode
   }
@@ -129,15 +130,22 @@ object D3GraphController {
     (for {
       classNode <- callGraph.classes
       methodNode <- classNode.methods if exported(methodNode) && reachable(methodNode)
+      dn = Decoder.fullDisplayName(methodNode)
       displayName = Decoder.getDisplayName(methodNode)
       encodedName = Decoder.getFullEncodedName(methodNode)
       shortName = Decoder.shortenDisplayName(displayName)
       if text.forall(displayName.contains)
-    } yield (shortName, displayName, encodedName)) (collection.breakOut).sorted
+    } yield (shortName, dn, encodedName)) (collection.breakOut).sorted
   }
 
   private def filter(className: String, methodName: String): Seq[MethodNode] = {
-    callGraph.classes.withFilter(_.encodedName == className)
-      .flatMap(_.methods.filter(_.encodedName == methodName))
+    if(className == "core"){
+      Seq[MethodNode]()
+    } else if(className == "exports") {
+      Seq[MethodNode]()
+    } else {
+      callGraph.classes.withFilter(_.encodedName == className)
+        .flatMap(_.methods.filter(_.encodedName == methodName))
+    }
   }
 }

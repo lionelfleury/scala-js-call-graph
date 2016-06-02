@@ -1,7 +1,5 @@
 package ch.epfl.sbtplugin
 
-import java.io.{BufferedWriter, File, FileWriter}
-
 import ch.epfl.callgraph.utils.Utils._
 import org.scalajs.core.tools.linker.analyzer.Analysis
 import org.scalajs.core.tools.linker.analyzer.Analysis._
@@ -23,6 +21,22 @@ object Graph {
     val superClass = if (ci.superClass != null) Some(ci.superClass.encodedName) else None
     val interfaces = ci.ancestors.map(_.encodedName)
     new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, ci.isNeededAtAll, superClass, interfaces, methods)
+  }
+
+  private def toMissingMethodInfo(mi: MethodInfo, from: From) : MissingMethodInfo = {
+    val fromText = from match {
+      case FromMethod(method) => method.encodedName
+      case _ => ""
+    }
+    new MissingMethodInfo(mi.encodedName, mi.owner.encodedName, fromText)
+  }
+
+  private def toMissingClassInfo(mi: ClassInfo, from: From) : MissingClassInfo = {
+    val fromText = from match {
+      case FromMethod(method) => method.encodedName
+      case _ => ""
+    }
+    new MissingClassInfo(mi.encodedName, fromText)
   }
 
   /**
@@ -74,6 +88,10 @@ object Graph {
     val classInfos = analysis.classInfos.values
     val callsMap = reverseEdges(classInfos)
     val classes = mutable.Set[ClassNode]()
+    val errors = analysis.errors.collect {
+      case MissingMethod(info: MethodInfo, from: From) => toMissingMethodInfo(info, from)
+      case MissingClass(info: ClassInfo, from: From) => toMissingClassInfo(info, from)
+    }
 
     for (classInfo <- classInfos) {
       val methodInfos = classInfo.methodInfos.values ++ classInfo.staticMethodInfos.values
@@ -82,7 +100,7 @@ object Graph {
       }
       classes += toClassNode(classInfo, methods.toSeq)
     }
-    val graph = CallGraph(classes.toSeq)
+    val graph = CallGraph(classes.toSeq, errors)
     upickle.default.write(graph)
   }
 

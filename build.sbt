@@ -24,8 +24,8 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.singlespaced" %%% "scalajs-d3" % "0.3.3",
-      "org.scala-js" %% "scalajs-env-selenium" % "0.1.2",
       "com.lihaoyi" %%% "upickle" % "0.4.0",
+      "org.scala-js" %%% "scalajs-ir" % scalaJSVersion,
       "com.lihaoyi" %%% "scalatags" % "0.5.5"),
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.16" / "3.5.16/d3.js",

@@ -12,6 +12,10 @@ object Utils {
     def isReachable: Boolean
   }
 
+  sealed trait ErrorInfo {
+    def from: String
+  }
+
   @key("C")
   final case class ClassNode(encodedName: String,
                              isExported: Boolean,
@@ -30,7 +34,13 @@ object Utils {
                               methodsCalled: Map[String, Seq[String]],
                               calledFrom: Map[String, Seq[String]]) extends Node
 
-  final case class CallGraph(classes: Seq[ClassNode] = Seq.empty)
+  @key("MM")
+  final case class MissingMethodInfo(encodedName: String, className: String, from: String) extends ErrorInfo
+
+  @key("MC")
+  final case class MissingClassInfo(encodedName: String, from: String) extends ErrorInfo
+
+  final case class CallGraph(classes: Seq[ClassNode] = Seq.empty, errors: Seq[ErrorInfo] = Seq.empty)
 
   /**
     * Unfortunately there is an issue with uPickle on Scala 2.10.
@@ -107,4 +117,44 @@ object Utils {
     }
   }
 
+  object MissingMethodInfo {
+    implicit val missingMethodWriter = upickle.default.Writer[MissingMethodInfo] {
+      case t => Js.Obj(
+        ("e", Js.Str(t.encodedName)),
+        ("c", Js.Str(t.className)),
+        ("f", Js.Str(t.from))
+      )
+    }
+
+    implicit val missingMethodReader = upickle.default.Reader[MissingMethodInfo] {
+      case Js.Obj(
+      (_, encodedName),
+      (_, className),
+      (_, from)
+      ) => new MissingMethodInfo(
+        upickle.default.readJs[String](encodedName),
+        upickle.default.readJs[String](className),
+        upickle.default.readJs[String](from)
+      )
+    }
+  }
+
+  object MissingClassInfo {
+    implicit val missingClassWriter = upickle.default.Writer[MissingClassInfo] {
+      case t => Js.Obj(
+        ("e", Js.Str(t.encodedName)),
+        ("f", Js.Str(t.from))
+      )
+    }
+
+    implicit val missingClassReader = upickle.default.Reader[MissingClassInfo] {
+      case Js.Obj(
+      (_, encodedName),
+      (_, from)
+      ) => new MissingClassInfo(
+        upickle.default.readJs[String](encodedName),
+        upickle.default.readJs[String](from)
+      )
+    }
+  }
 }

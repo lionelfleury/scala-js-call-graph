@@ -1,6 +1,7 @@
 package ch.epfl.callgraph.visualization.model
 
-import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
+import ch.epfl.callgraph.utils.Utils._
+import org.scalajs.core.ir.Definitions
 import org.scalajs.core.ir.Types.{ArrayType, ClassType, ReferenceType}
 
 /**
@@ -8,114 +9,24 @@ import org.scalajs.core.ir.Types.{ArrayType, ClassType, ReferenceType}
   */
 object Decoder {
 
-  def decodeClassName(encodedName: String): String = {
-    val encoded =
-      if (encodedName.charAt(0) == '$') encodedName.substring(1)
-      else encodedName
-    val base = decompressedClasses.getOrElse(encoded, {
-      decompressedPrefixes collectFirst {
-        case (prefix, decompressed) if encoded.startsWith(prefix) =>
-          decompressed + encoded.substring(prefix.length)
-      } getOrElse {
-        assert(!encoded.isEmpty && encoded.charAt(0) == 'L',
-          s"Cannot decode invalid encoded name '$encodedName'")
-        encoded.substring(1)
-      }
-    })
-    base.replace("_", ".").replace("$und", "_")
-  }
-
-  private val compressedClasses: Map[String, String] = Map(
-    "java_lang_Object" -> "O",
-    "java_lang_String" -> "T",
-    "scala_Unit" -> "V",
-    "scala_Boolean" -> "Z",
-    "scala_Char" -> "C",
-    "scala_Byte" -> "B",
-    "scala_Short" -> "S",
-    "scala_Int" -> "I",
-    "scala_Long" -> "J",
-    "scala_Float" -> "F",
-    "scala_Double" -> "D"
-  ) ++ (
-    for (index <- 2 to 22)
-      yield s"scala_Tuple$index" -> ("T" + index)
-    ) ++ (
-    for (index <- 0 to 22)
-      yield s"scala_Function$index" -> ("F" + index)
-    )
-
-  private val decompressedClasses: Map[String, String] =
-    compressedClasses map { case (a, b) => (b, a) }
-
-  private val compressedPrefixes = Seq(
-    "scala_scalajs_runtime_" -> "sjsr_",
-    "scala_scalajs_" -> "sjs_",
-    "scala_collection_immutable_" -> "sci_",
-    "scala_collection_mutable_" -> "scm_",
-    "scala_collection_generic_" -> "scg_",
-    "scala_collection_" -> "sc_",
-    "scala_runtime_" -> "sr_",
-    "scala_" -> "s_",
-    "java_lang_" -> "jl_",
-    "java_util_" -> "ju_"
-  )
-
-  private val decompressedPrefixes: Seq[(String, String)] =
-    compressedPrefixes map { case (a, b) => (b, a) }
-
-  private def isConstructorName(name: String): Boolean =
-    name.startsWith("init___")
-
-//  def decodeReferenceType(encodedName: String): ReferenceType = {
-//    val arrayDepth = encodedName.indexWhere(_ != 'A')
-//    if (arrayDepth == 0)
-//      ClassType(encodedName)
-//    else
-//      ArrayType(encodedName.substring(arrayDepth), arrayDepth)
-//  }
-
+  /**
+    * Return a decoded method name, if the method is exported, will show it between <>
+    * @param encodedName the name of the method to decode
+    * @return the decoded name
+    */
   def decodeMethodName(encodedName: String): String = {
-    val (simpleName, privateAndSigString) = if (isConstructorName(encodedName)) {
-      val privateAndSigString =
-        if (encodedName == "init___") ""
-        else encodedName.stripPrefix("init___") + "__"
-      ("<init>", privateAndSigString)
-    } else {
-      val pos = encodedName.indexOf("__")
-      val pos2 =
-        if (!encodedName.substring(pos + 2).startsWith("p")) pos
-        else encodedName.indexOf("__", pos + 2)
-      (encodedName.substring(0, pos), encodedName.substring(pos2 + 2))
-    }
-
-    // -1 preserves trailing empty strings
-    val parts = privateAndSigString.split("__", -1).toSeq
-    val paramsAndResultStrings =
-      if (parts.headOption.exists(_.startsWith("p"))) parts.tail
-      else parts
-
-    val paramStrings :+ resultString = paramsAndResultStrings
-
-//    val paramTypes = paramStrings.map(decodeReferenceType).toList
-//    val resultType =
-//      if (resultString == "") None // constructor or reflective proxy
-//      else Some(decodeReferenceType(resultString))
-
+    val simpleName = Definitions.decodeMethodName(encodedName)._1
     val exportedPrefix = "$$js$exported$meth$"
-    val newSimpleName =
-      if (simpleName.startsWith(exportedPrefix)) "<" + simpleName.replace(exportedPrefix, "") + ">"
-      else simpleName
 
-//    def typeDisplayName(tpe: ReferenceType): String = tpe match {
-//      case ClassType(encodedName) => decodeClassName(encodedName)
-//      case ArrayType(base, dimensions) => "[" * dimensions + decodeClassName(base)
-//    }
-
-    newSimpleName /* + "(" + paramTypes.map(typeDisplayName).mkString(",") + ")" +
-      resultType.fold("")(typeDisplayName) */
+    if (simpleName.startsWith(exportedPrefix)) "<" + simpleName.replace(exportedPrefix, "") + ">"
+    else simpleName
   }
 
+  /**
+    * Split a fully encoded name (class + method)
+    * @param fullEncodedName the full name to decode
+    * @return a tuple containing the class and the method name
+    */
   def splitEncodedName(fullEncodedName: String): (String, String) = {
     val as = fullEncodedName.split('.')
     val className = as(0)
@@ -123,23 +34,65 @@ object Decoder {
     (className, methodName)
   }
 
+  /**
+    * Create a full encoded name (class + method)
+    * @param className the name of the class
+    * @param methodName the name of the method
+    * @return the concatenation of both arguments
+    */
   def getFullEncodedName(className: String, methodName: String): String = className + "." + methodName
 
+  /**
+    * Returns the fully encoded name, works on class and methods
+    * @param node
+    * @return the full encoded name of the node
+    */
   def getFullEncodedName(node: Node): String = node match {
     case classNode: ClassNode => classNode.encodedName
     case methodNode: MethodNode => getFullEncodedName(methodNode.className, methodNode.encodedName)
   }
 
+  /**
+    * Return the fully encoded name, but for ErrorInfo
+    * @param error the error to look into
+    * @return the full encoded name of the error target
+    */
+  def getFullEncodedName(error: ErrorInfo): String = error match {
+    case missingClass: MissingClassInfo => missingClass.encodedName
+    case missingMethod: MissingMethodInfo => getFullEncodedName(missingMethod.className, missingMethod.encodedName)
+  }
+
+  /**
+    * Create the display name of the node
+    * Remove useless data from method (argument type and return type)
+    * @param node the targeted node
+    * @return the display name
+    */
   def getDisplayName(node: Node): String = node match {
-    case classNode: ClassNode => decodeClassName(classNode.encodedName)
+    case classNode: ClassNode => Definitions.decodeClassName(classNode.encodedName)
     case methodNode: MethodNode =>
       val displayName =
         if (methodNode.isExported) methodNode.encodedName
         else decodeMethodName(methodNode.encodedName)
 
-      decodeClassName(methodNode.className) + "." + displayName
+      Definitions.decodeClassName(methodNode.className) + "." + displayName
   }
 
+  /**
+    * Return the display name of the target of an error
+    * @param error the target error
+    * @return the display name of the error's target
+    */
+  def getDisplayName(error: ErrorInfo): String = error match {
+    case missingClass: MissingClassInfo => Definitions.decodeClassName(missingClass.encodedName)
+    case missingMethod: MissingMethodInfo => Definitions.decodeClassName(missingMethod.className) + "." + missingMethod.encodedName
+  }
+
+  /**
+    * Shorten the package name out of a display name
+    * @param displayName the display name to shorten
+    * @return Shortened name (one letter per package)
+    */
   def shortenDisplayName(displayName: String): String = {
     val as = displayName.split('.')
     for (i <- 0 until as.length - 2) as(i) = as(i).take(1)
@@ -147,5 +100,36 @@ object Decoder {
   }
 
   def shortenDisplayName(node: Node): String = shortenDisplayName(getDisplayName(node))
+
+  /**
+    * The full name of the node, including the parameters type and the return one
+    * @param node the target node
+    * @return the full name
+    */
+  def fullDisplayName(node: Node): String = {
+    node match {
+      case node: MethodNode => {
+        if (node.isExported) getDisplayName(node)
+        else {
+
+          val (simpleName, paramTypes, resultType) = org.scalajs.core.ir.Definitions.decodeMethodName(node.encodedName)
+          Definitions.decodeClassName(node.className) + simpleName + "(" + paramTypes.map(typeDisplayName _).mkString(",") + ")" +
+            resultType.fold("")(typeDisplayName)
+        }
+      }
+      case node: ClassNode => getDisplayName(node)
+    }
+  }
+
+  def fullDisplayName(error: MissingMethodInfo) = {
+    val (simpleName, paramTypes, resultType) = org.scalajs.core.ir.Definitions.decodeMethodName(error.encodedName)
+    error.className + simpleName + "(" + paramTypes.map(typeDisplayName _).mkString(",") + ")" + resultType.fold("")(typeDisplayName)
+  }
+
+  private def typeDisplayName(tpe: ReferenceType): String = tpe match {
+    case ClassType(encodedName)      => Definitions.decodeClassName(encodedName)
+    case ArrayType(base, dimensions) => "[" * dimensions + Definitions.decodeClassName(base)
+  }
+
 
 }

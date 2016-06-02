@@ -31,6 +31,11 @@ class DocumentTest {
     """{"classes":[{"e":"LFirstClassNode$","i":true,"ne":false,"re":true,"s":[],"in":[],"m":[]}], "methods":[]}"""
   }
 
+  def singleErrorNodeGraph = {
+    """{"classes":[{"e":"LFirstClassNode$","i":true,"ne":false,"re":true,"s":[],"in":[],"m":[]}], "methods":[],
+      |"errors":[{"e":"sleep__J__V","c":"LFirstClassNode$","f":""}]}""".stripMargin
+  }
+
   private def resetView(callgraph: CallGraph) = {
     D3GraphController.init(callgraph)
     HtmlView.showLeftNav
@@ -64,6 +69,16 @@ class DocumentTest {
       $(li).contextmenu()
     }}: scalajs.js.ThisFunction)
     assertTrue($(".context-menu").is(":visible").asInstanceOf[Boolean])
+  }
+
+  @Test def errorListShowedWhenErrors : Unit = {
+    resetView(upickle.read[CallGraph](singleErrorNodeGraph))
+    assertFalse($("#errors").is(":empty").asInstanceOf[Boolean])
+  }
+
+  @Test def errorListNotShowed : Unit = {
+    resetView(upickle.read[CallGraph](singleNodeGraph))
+    assertTrue($("#errors").length.asInstanceOf[Integer] == 0)
   }
 
 }

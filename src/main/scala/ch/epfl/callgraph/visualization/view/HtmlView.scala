@@ -1,7 +1,8 @@
 package ch.epfl.callgraph.visualization.view
 
-import ch.epfl.callgraph.utils.Utils.CallGraph
+import ch.epfl.callgraph.utils.Utils._
 import ch.epfl.callgraph.visualization.controller.{D3GraphController, Layers}
+import ch.epfl.callgraph.visualization.model.Decoder
 import org.scalajs.dom.{KeyboardEvent, MouseEvent}
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.FileReader
@@ -17,6 +18,7 @@ object HtmlView extends JSApp {
   val exported = input(`type` := "checkbox", checked).render
   val reachable = input(`type` := "checkbox", checked).render
   val output = span.render
+  val errors = div.render
   val layersHTML = div(`class` := "layers").render
 
   val searchField = div(box, div(" Only exported:", exported), div(" Only reachable:", reachable)).render
@@ -28,18 +30,63 @@ object HtmlView extends JSApp {
   def main(): Unit = {
     val target = sdom.document.getElementById("nav")
     target.innerHTML = ""
-    target.appendChild(div(searchField, layersHTML, output, ContextMenu.nav).render)
+    target.appendChild(div(searchField, layersHTML, output, errors, ContextMenu.nav).render)
     val text = sdom.document.getElementById("callgraph").innerHTML
     val callGraph = upickle.read[CallGraph](text)
     D3GraphController.init(callGraph)
     searchList()
     showLayers()
+
+    if(callGraph.errors.nonEmpty) {
+      showErrors(callGraph)
+    }
+  }
+
+  def showErrors(callGraph: CallGraph) = {
+    errors.innerHTML = ""
+    def view(encodedName: String) = (e: sdom.MouseEvent) => D3GraphController.initNewLayer(encodedName)
+
+    val mappedErrors = callGraph.errors.groupBy(x => x match {
+      case x : MissingMethodInfo => "methods"
+      case x : MissingClassInfo => "classes"
+      case _ => "others"
+    })
+
+    val methodErrors = mappedErrors.get("methods") match {
+      case Some(s) => s.collect (x => x match {
+        case x @ MissingMethodInfo(encodedName: String, className: String, from: String) =>
+          val displayName = Decoder.getDisplayName(x)
+          val shortName = Decoder.shortenDisplayName(displayName)
+          li(a(shortName, onclick := view(Decoder.getFullEncodedName(className, encodedName))), title := Decoder.fullDisplayName(x))
+      })
+      case None => Seq()
+    }
+
+    val classErrors = mappedErrors.get("classes") match {
+      case Some(s) => s collect (x => x match {
+        case MissingClassInfo(encodedName: String, from: String) => {
+          val displayName = Decoder.getDisplayName(x)
+          val shortName = Decoder.shortenDisplayName(displayName)
+          li(shortName)
+        }
+      })
+      case None => Seq()
+    }
+
+    errors.appendChild(
+      if(methodErrors.nonEmpty || classErrors.nonEmpty) div(
+        h4("Errors:"),
+        if(methodErrors.nonEmpty) div(h5("Missings methods"), ul(methodErrors:_*)) else div(),
+        if(classErrors.nonEmpty) div(h5("Missing classes"), ul(classErrors:_*)) else div(),
+        id := "errors").render
+      else div().render
+    )
   }
 
   def showLeftNav = {
     val target = sdom.document.getElementById("nav").asInstanceOf[Div]
     target.innerHTML = ""
-    target.appendChild(div(searchField, layersHTML, output, ContextMenu.nav).render)
+    target.appendChild(div(searchField, layersHTML, output, errors, ContextMenu.nav).render)
   }
 
   def searchList() = {
