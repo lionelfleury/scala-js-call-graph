@@ -42,4 +42,3 @@ sbt callgraph-dev
 ```
 to test your modifications. This command generates a `callgraph-dev.html` using the local version of the javascript files.
 
-By default, the `callgraph.html` is using javascript files hosted on the release branch of the repo.
