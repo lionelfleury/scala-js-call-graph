@@ -57,7 +57,7 @@ object HtmlView extends JSApp {
         case x @ MissingMethodInfo(encodedName: String, className: String, from: String) =>
           val displayName = Decoder.getDisplayName(x)
           val shortName = Decoder.shortenDisplayName(displayName)
-          li(a(shortName, onclick := view(Decoder.getFullEncodedName(className, encodedName))))
+          li(a(shortName, onclick := view(Decoder.getFullEncodedName(className, encodedName))), title := Decoder.fullDisplayName(x))
       })
       case None => Seq()
     }
@@ -74,11 +74,12 @@ object HtmlView extends JSApp {
     }
 
     errors.appendChild(
-      div(
+      if(methodErrors.nonEmpty || classErrors.nonEmpty) div(
         h4("Errors:"),
         if(methodErrors.nonEmpty) div(h5("Missings methods"), ul(methodErrors:_*)) else div(),
-        if(classErrors.nonEmpty) div(h5("Missing classes"), ul(classErrors:_*)) else div()
-      ).render
+        if(classErrors.nonEmpty) div(h5("Missing classes"), ul(classErrors:_*)) else div(),
+        id := "errors").render
+      else div().render
     )
   }
 

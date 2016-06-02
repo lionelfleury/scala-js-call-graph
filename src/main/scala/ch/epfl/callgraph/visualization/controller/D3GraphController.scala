@@ -130,11 +130,12 @@ object D3GraphController {
     (for {
       classNode <- callGraph.classes
       methodNode <- classNode.methods if exported(methodNode) && reachable(methodNode)
+      dn = Decoder.fullDisplayName(methodNode)
       displayName = Decoder.getDisplayName(methodNode)
       encodedName = Decoder.getFullEncodedName(methodNode)
       shortName = Decoder.shortenDisplayName(displayName)
       if text.forall(displayName.contains)
-    } yield (shortName, displayName, encodedName)) (collection.breakOut).sorted
+    } yield (shortName, dn, encodedName)) (collection.breakOut).sorted
   }
 
   private def filter(className: String, methodName: String): Seq[MethodNode] = {
