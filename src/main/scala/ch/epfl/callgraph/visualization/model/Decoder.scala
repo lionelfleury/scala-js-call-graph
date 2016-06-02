@@ -1,6 +1,6 @@
 package ch.epfl.callgraph.visualization.model
 
-import ch.epfl.callgraph.utils.Utils.{ClassNode, MethodNode, Node}
+import ch.epfl.callgraph.utils.Utils._
 import org.scalajs.core.ir.Types.{ArrayType, ClassType, ReferenceType}
 
 /**
@@ -130,6 +130,11 @@ object Decoder {
     case methodNode: MethodNode => getFullEncodedName(methodNode.className, methodNode.encodedName)
   }
 
+  def getFullEncodedName(error: ErrorInfo): String = error match {
+    case missingClass: MissingClassInfo => missingClass.encodedName
+    case missingMethod: MissingMethodInfo => getFullEncodedName(missingMethod.className, missingMethod.encodedName)
+  }
+
   def getDisplayName(node: Node): String = node match {
     case classNode: ClassNode => decodeClassName(classNode.encodedName)
     case methodNode: MethodNode =>
@@ -138,6 +143,11 @@ object Decoder {
         else decodeMethodName(methodNode.encodedName)
 
       decodeClassName(methodNode.className) + "." + displayName
+  }
+
+  def getDisplayName(error: ErrorInfo): String = error match {
+    case missingClass: MissingClassInfo => decodeClassName(missingClass.encodedName)
+    case missingMethod: MissingMethodInfo => decodeClassName(missingMethod.className) + "." + missingMethod.encodedName
   }
 
   def shortenDisplayName(displayName: String): String = {
