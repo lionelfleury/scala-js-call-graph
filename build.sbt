@@ -10,7 +10,8 @@ val testSettings = Seq(
   testOptions += Tests.Argument(TestFramework("com.novocode.junit.JUnitFramework"), "-v", "-a"),
   jsDependencies ++= Seq(
     RuntimeDOM % "test",
-    "org.webjars" % "jquery" % "1.10.2" / "jquery.js")
+    "org.webjars" % "jquery" % "1.10.2" / "jquery.js"),
+  jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox)
 )
 
 lazy val `scalajs-callgraph` = (project in file(".")).
@@ -24,13 +25,12 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "org.singlespaced" %%% "scalajs-d3" % "0.3.3",
-      "com.lihaoyi" %%% "upickle" % "0.4.0",
       "org.scala-js" %%% "scalajs-ir" % scalaJSVersion,
+      "com.lihaoyi" %%% "upickle" % "0.4.0",
       "com.lihaoyi" %%% "scalatags" % "0.5.5"),
     jsDependencies ++= Seq(
       "org.webjars" % "d3js" % "3.5.16" / "3.5.16/d3.js",
       RuntimeDOM),
-    jsEnv in Test := new org.scalajs.jsenv.selenium.SeleniumJSEnv(Firefox),
     scalaJSStage in Global := FastOptStage,
     scalaJSUseRhino in Global := false,
     persistLauncher in Compile := true,
@@ -38,7 +38,7 @@ lazy val `scalajs-callgraph` = (project in file(".")).
     publish :=(),
     publishLocal :=()).
   dependsOn(utilsJVM, utilsJS).
-  aggregate(utilsJVM, utilsJS, `sbt-scalajs-callgraph`)
+  aggregate(utilsJVM, utilsJS)
 
 lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
   settings(commonSettings: _*).
@@ -46,8 +46,15 @@ lazy val `sbt-scalajs-callgraph` = (project in file("sbt-scalajs-callgraph")).
     crossScalaVersions := Seq("2.10.6"),
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
-    libraryDependencies += "org.scala-js" %% "scalajs-tools" % scalaJSVersion).
-  dependsOn(utilsJVM)
+    libraryDependencies += "org.scala-js" %% "scalajs-tools" % scalaJSVersion,
+    managedResources in Compile ++= Seq(
+      (fullOptJS in Compile in `scalajs-callgraph`).value.data,
+      (packageScalaJSLauncher in Compile in `scalajs-callgraph`).value.data,
+      (packageJSDependencies in Compile in `scalajs-callgraph`).value
+    ),
+    unmanagedResources in Compile +=
+      baseDirectory.value.getParentFile / "scalajs-callgraph-style.css"
+  ).dependsOn(utilsJVM)
 
 lazy val `sbt-scalajs-callgraph-utils` = (crossProject in file("sbt-scalajs-callgraph-utils")).
   settings(commonSettings: _*).
