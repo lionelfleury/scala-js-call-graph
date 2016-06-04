@@ -23,7 +23,7 @@ object Graph {
     new ClassNode(ci.encodedName, ci.isExported, ci.nonExistent, ci.isNeededAtAll, superClass, interfaces, methods)
   }
 
-  private def toMissingMethodInfo(mi: MethodInfo, from: From) : MissingMethodInfo = {
+  private def toMissingMethodInfo(mi: MethodInfo, from: From): MissingMethodInfo = {
     val fromText = from match {
       case FromMethod(method) => method.encodedName
       case _ => ""
@@ -31,7 +31,7 @@ object Graph {
     new MissingMethodInfo(mi.encodedName, mi.owner.encodedName, fromText)
   }
 
-  private def toMissingClassInfo(mi: ClassInfo, from: From) : MissingClassInfo = {
+  private def toMissingClassInfo(mi: ClassInfo, from: From): MissingClassInfo = {
     val fromText = from match {
       case FromMethod(method) => method.encodedName
       case _ => ""

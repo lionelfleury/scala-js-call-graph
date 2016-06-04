@@ -8,11 +8,12 @@ import sbt._
 
 class FileGenerator(graph: String, isDev: Boolean) {
 
-  private val path = if (isDev) "../../../target/scala-2.11/" else ""
-  private val opt = if (isDev) "scalajs-callgraph-fastopt.js" else "scalajs-callgraph-opt.js"
-  private val deps = "scalajs-callgraph-jsdeps.js"
-  private val launcher = "scalajs-callgraph-launcher.js"
-  private val style = (if (isDev) "../../../" else "") + "scalajs-callgraph-style.css"
+  private val path = if (isDev) "../../../visualisation/target/scala-2.11/" else "./res/"
+  private val pathStyle = if (isDev) "../../../" else "./res/"
+  private val opt = if (isDev) "callgraph-fastopt.js" else "callgraph-opt.js"
+  private val deps = "callgraph-jsdeps.js"
+  private val launcher = "callgraph-launcher.js"
+  private val style = "callgraph-style.css"
 
   private lazy val content =
     s"""
@@ -20,7 +21,7 @@ class FileGenerator(graph: String, isDev: Boolean) {
        |<html>
        |<meta charset="UTF-8">
        |<title>Scala.js Call Graph Visualization</title>
-       |<link rel="stylesheet" type="text/css" href="$style">
+       |<link rel="stylesheet" type="text/css" href="$pathStyle$style">
        |<body>
        |<table width="100%">
        |<tr><td id="header" colspan=2><h1>Scala.js Call Graph Visualization</h1></td></tr>
@@ -43,8 +44,10 @@ class FileGenerator(graph: String, isDev: Boolean) {
 
   def createFiles(name: String, destination: File): Unit = {
     if (!isDev) {
+      val dest = destination / "res"
+      Files.createDirectories(Paths.get(dest.absolutePath))
       val files = Seq(opt, deps, launcher, style)
-      for (file <- files) copyFile(file, destination)
+      for (file <- files) copyFile(file, dest)
     }
     val bw = new BufferedWriter(new FileWriter(destination / name))
     bw.write(content)

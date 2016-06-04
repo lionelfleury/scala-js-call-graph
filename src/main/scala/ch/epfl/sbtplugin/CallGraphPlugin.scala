@@ -50,8 +50,8 @@ object CallGraphPlugin extends AutoPlugin {
     val graph = Graph.createFrom(analysis)
     val path = (crossTarget in key).value
     val file = (artifactPath in key).value.toString
-    val writer = new FileGenerator(graph, isDev)
-    writer.createFiles(file, path)
+    val fileGenerator = new FileGenerator(graph, isDev)
+    fileGenerator.createFiles(file, path)
     log.info(s"HTML file created in $file")
   }
 

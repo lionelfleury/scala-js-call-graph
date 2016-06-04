@@ -3,13 +3,11 @@ package ch.epfl.callgraph.visualization.view
 import ch.epfl.callgraph.utils.Utils._
 import ch.epfl.callgraph.visualization.controller.{D3GraphController, Layers}
 import ch.epfl.callgraph.visualization.model.Decoder
-import org.scalajs.dom.{KeyboardEvent, MouseEvent}
 import org.scalajs.dom.html.Div
-import org.scalajs.dom.raw.FileReader
+import org.scalajs.dom.{KeyboardEvent, MouseEvent}
 import org.scalajs.{dom => sdom}
 import upickle.{default => upickle}
 
-import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scalatags.JsDom.all._
 

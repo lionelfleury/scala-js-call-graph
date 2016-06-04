@@ -6,13 +6,13 @@ import ch.epfl.callgraph.visualization.model.Decoder
 import org.scalajs.dom
 import org.scalajs.dom.Event
 import org.singlespaced.d3js.Ops._
-import org.singlespaced.d3js.{DragEvent, Selection, d3}
+import org.singlespaced.d3js.{DragEvent, d3}
 
 import scala.scalajs.js
 
 
 class D3GraphView {
-  
+
   private val d3d = js.Dynamic.global.d3 // A dynamic fallback
   private val width = 400.0
   private val height = 300.0
