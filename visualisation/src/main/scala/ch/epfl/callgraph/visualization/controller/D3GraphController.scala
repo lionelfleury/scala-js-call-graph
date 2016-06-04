@@ -7,6 +7,7 @@ import ch.epfl.callgraph.visualization.model.Decoder
 object D3GraphController {
 
   private var callGraph: CallGraph = CallGraph()
+
   private def layer: Layer = Layers.current
 
   /**
@@ -17,7 +18,7 @@ object D3GraphController {
   def init(graph: CallGraph): Unit = {
     Layers.reset
     callGraph = graph
-    callGraph.classes.withFilter(_.isExported) foreach { c =>
+    callGraph.classes.find(_.isExported) foreach { c =>
       val source = layer.addNode(c)
       expandAllFrom(source)
     }
@@ -139,9 +140,9 @@ object D3GraphController {
   }
 
   private def filter(className: String, methodName: String): Seq[MethodNode] = {
-    if(className == "core"){
+    if (className == "core") {
       Seq[MethodNode]()
-    } else if(className == "exports") {
+    } else if (className == "exports") {
       Seq[MethodNode]()
     } else {
       callGraph.classes.withFilter(_.encodedName == className)

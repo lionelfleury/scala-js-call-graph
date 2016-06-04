@@ -1,10 +1,11 @@
 import org.scalajs.jsenv.selenium.Firefox
 
 val commonSettings = Seq(
-  ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)),
   organization := "com.github.lionelfleury",
   version := "0.1.3-SNAPSHOT",
-  scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8")
+  scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8"),
+  ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)),
+  aggregate in update := false
 )
 
 val testSettings = Seq(
@@ -52,23 +53,28 @@ val publishSettings = Seq(
   }
 )
 
-lazy val `sbt-scalajs-callgraph` = (project in file(".")).
+lazy val root = (project in file(".")).
   enablePlugins(CrossPerProjectPlugin).
+  aggregate(utilsJS, utilsJVM, `sbt-scalajs-callgraph`).
   settings(commonSettings: _*).
-  settings(publishSettings: _*).
+  settings(publishSettings: _*)
+
+
+lazy val `sbt-scalajs-callgraph` = (project in file("sbt-plugin")).
+  settings(commonSettings: _*).
   settings(
     scalaVersion := "2.10.6",
     crossScalaVersions := Seq("2.10.6"),
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
-    libraryDependencies += "org.scala-js" %% "scalajs-tools" % scalaJSVersion,
     managedResources in Compile ++= Seq(
       (fullOptJS in Compile in callgraph).value.data,
       (packageScalaJSLauncher in Compile in callgraph).value.data,
       (packageJSDependencies in Compile in callgraph).value
     ),
-    unmanagedResources in Compile += baseDirectory.value / "callgraph-style.css"
-  ).dependsOn(utilsJVM).aggregate(utilsJS, utilsJVM, callgraph)
+    unmanagedResources in Compile += baseDirectory.value / "callgraph-style.css",
+    fastOptJS := (fastOptJS in Compile in callgraph).value
+  ).dependsOn(utilsJVM)
 
 lazy val callgraph = (project in file("visualisation")).
   enablePlugins(ScalaJSPlugin, ScalaJSJUnitPlugin).
@@ -76,11 +82,9 @@ lazy val callgraph = (project in file("visualisation")).
   settings(testSettings: _*).
   settings(
     scalaVersion := "2.11.8",
-    crossScalaVersions := Seq("2.11.8"),
     libraryDependencies ++= Seq(
       "org.singlespaced" %%% "scalajs-d3" % "0.3.3",
       "org.scala-js" %%% "scalajs-ir" % scalaJSVersion,
-      "com.lihaoyi" %%% "upickle" % "0.4.0",
       "com.lihaoyi" %%% "scalatags" % "0.5.5"),
     scalaJSStage in Global := FastOptStage,
     scalaJSUseRhino in Global := false,
