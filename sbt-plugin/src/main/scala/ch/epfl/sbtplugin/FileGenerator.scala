@@ -9,7 +9,7 @@ import sbt._
 class FileGenerator(graph: String, isDev: Boolean) {
 
   private val path = if (isDev) "../../../visualisation/target/scala-2.11/" else "./res/"
-  private val pathStyle = if (isDev) "" else "./res/"
+  private val pathStyle = if (isDev) "../../../" else "./res/"
   private val opt = if (isDev) "callgraph-fastopt.js" else "callgraph-opt.js"
   private val deps = "callgraph-jsdeps.js"
   private val launcher = "callgraph-launcher.js"

@@ -72,7 +72,7 @@ lazy val `sbt-scalajs-callgraph` = (project in file("sbt-plugin")).
       (packageScalaJSLauncher in Compile in callgraph).value.data,
       (packageJSDependencies in Compile in callgraph).value
     ),
-    unmanagedResources in Compile += baseDirectory.value / "callgraph-style.css",
+    unmanagedResources in Compile += baseDirectory.value.getParentFile / "callgraph-style.css",
     fastOptJS := (fastOptJS in Compile in callgraph).value
   ).dependsOn(utilsJVM)
 
