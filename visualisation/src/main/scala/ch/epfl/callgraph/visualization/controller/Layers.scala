@@ -1,6 +1,6 @@
 package ch.epfl.callgraph.visualization.controller
 
-import ch.epfl.callgraph.utils.Utils.Node
+import ch.epfl.callgraph.utils.Utils.{ClassNode, Node}
 import ch.epfl.callgraph.visualization.model.D3GraphModel.{GraphLink, GraphNode}
 import ch.epfl.callgraph.visualization.view.{D3GraphView, HtmlView}
 import org.scalajs.dom.raw.HTMLSelectElement
@@ -35,14 +35,18 @@ final class Layer(val name: String, d3GraphView: D3GraphView) {
   }
 
   def addLink(source: GraphNode, target: GraphNode): Boolean = {
-    val newLink = GraphLink(source, target)
+    val group = source.data match {
+      case _:ClassNode => "dashed"
+      case _ => "plain"
+    }
+    val newLink = GraphLink(source, target, group)
     links.add(newLink)
   }
 
   def removeNode(node: GraphNode) = {
     val newLinks = mutable.HashSet[GraphLink]()
     val newNodes = mutable.HashSet[GraphNode]()
-    for (link@GraphLink(src, tgt) <- links if src != node && tgt != node) {
+    for (link@GraphLink(src, tgt, group) <- links if src != node && tgt != node) {
       newLinks += link
       newNodes += src
       newNodes += tgt

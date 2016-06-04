@@ -13,7 +13,8 @@ import scala.scalajs.js
 
 class D3GraphView {
 
-  private val d3d = js.Dynamic.global.d3 // A dynamic fallback
+  private val d3d = js.Dynamic.global.d3
+  // A dynamic fallback
   private val width = 400.0
   private val height = 300.0
 
@@ -27,17 +28,17 @@ class D3GraphView {
     .call(d3.behavior.zoom().on("zoom", rescale _))
 
   // Arrow style for links
-  svg.append("svg:defs").selectAll("marker")
-    .data(js.Array("end"))
-    .enter().append("svg:marker")
-    .attr("id", "end")
+  svg.append("defs").selectAll("marker")
+    .data(js.Array("plain", "dashed"))
+    .enter().append("marker")
+    .attr("id", (d: String) => d)
     .attr("viewBox", "0 -5 10 10")
     .attr("refX", 15)
     .attr("refY", 0)
     .attr("markerWidth", 6)
     .attr("markerHeight", 6)
     .attr("orient", "auto")
-    .append("svg:path")
+    .append("path")
     .attr("d", "M0,-5L10,0L0,5")
 
   // Init the visual part
@@ -132,8 +133,8 @@ class D3GraphView {
     link.exit().remove()
     link = link.data(links)
     link.enter().insert("path", ".node")
-      .attr("class", "link")
-      .attr("marker-end", "url(#end)")
+      .attr("class", (d: GraphLink) => "link " + d.group)
+      .attr("marker-end", (d: GraphLink) => "url(#" + d.group + ")")
 
     force
       .nodes(nodes)
@@ -142,11 +143,10 @@ class D3GraphView {
       .start()
   }
 
-  def reset: Unit = {
-    var link = vis.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
-    var node = vis.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
+  def reset(): Unit = {
+    val link = vis.selectAll[GraphLink](".link").data[GraphLink](js.Array[GraphLink]())
+    val node = vis.selectAll[GraphNode](".node").data[GraphNode](js.Array[GraphNode]())
 
-    // NB: the function arg is crucial here! nodes are not known by index!
     node.exit().remove()
     link.exit().remove()
   }

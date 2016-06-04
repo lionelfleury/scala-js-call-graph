@@ -2,22 +2,21 @@ a {
   cursor: pointer;
 }
 #header {
-    background-color:black;
-    color:white;
-    text-align:center;
+    background-color: black;
+    color: white;
+    text-align: center;
 }
 #nav {
-    width:25%;
-    background-color:#eeeeee;
+    width: 25%;
+    background-color: #eee;
 }
-
 #main {
-    width:75%;
+    width: 75%;
 }
 .node {
   cursor: pointer;
-  stroke: #3182bd;
-  stroke-width: 1.5px;
+  stroke: #444;
+  stroke-width: 1px;
 }
 .node text {
   fill: black;
@@ -26,8 +25,18 @@ a {
 }
 .link {
   fill: none;
-  stroke: #A0A0A0;
+  stroke: #888;
   stroke-width: 1.5px;
+}
+.link.dashed {
+  stroke: #ccc;
+  stroke-dasharray: 2,2;
+}
+#dashed {
+  fill: #ccc;
+}
+#plain {
+  fill: #888;
 }
 .context-menu {
     display: none;

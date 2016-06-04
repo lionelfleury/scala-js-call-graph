@@ -4,8 +4,7 @@ val commonSettings = Seq(
   organization := "com.github.lionelfleury",
   version := "0.1.3-SNAPSHOT",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Xfatal-warnings", "-encoding", "utf-8"),
-  ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)),
-  aggregate in update := false
+  ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true))
 )
 
 val testSettings = Seq(
@@ -57,7 +56,10 @@ lazy val root = (project in file(".")).
   enablePlugins(CrossPerProjectPlugin).
   aggregate(utilsJS, utilsJVM, `sbt-scalajs-callgraph`).
   settings(commonSettings: _*).
-  settings(publishSettings: _*)
+  settings(publishSettings: _*).
+  settings(
+    aggregate in update := false
+  )
 
 
 lazy val `sbt-scalajs-callgraph` = (project in file("sbt-plugin")).

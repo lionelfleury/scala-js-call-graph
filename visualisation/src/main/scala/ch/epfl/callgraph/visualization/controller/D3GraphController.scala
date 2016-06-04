@@ -91,7 +91,7 @@ object D3GraphController {
       } expandRecursive(newMethodNode)
 
       layer.update()
-    case _ => // TODO: classNode
+    case _ =>
   }
 
   /**

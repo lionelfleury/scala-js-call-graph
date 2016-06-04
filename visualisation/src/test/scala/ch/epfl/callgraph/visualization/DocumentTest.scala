@@ -1,16 +1,14 @@
 package ch.epfl.callgraph.visualization
 
 import ch.epfl.callgraph.utils.Utils.CallGraph
-import ch.epfl.callgraph.visualization.view.{D3GraphView, HtmlView}
 import ch.epfl.callgraph.visualization.controller.D3GraphController
+import ch.epfl.callgraph.visualization.view.HtmlView
 import org.junit.Assert._
 import org.junit.{Before, Test}
 import org.scalajs.dom.html._
 import org.scalajs.{dom => sdom}
 import upickle.{default => upickle}
 
-import scala.scalajs
-import scala.scalajs.js
 import scala.scalajs.js.Dynamic.global
 
 class DocumentTest {
@@ -18,7 +16,7 @@ class DocumentTest {
   val $ = global.jQuery
 
   @Before
-  def setupDocument() : Unit = {
+  def setupDocument(): Unit = {
     $("body").html("")
     $("body")
       .append(
@@ -38,9 +36,9 @@ class DocumentTest {
 
   private def resetView(callgraph: CallGraph) = {
     D3GraphController.init(callgraph)
-    HtmlView.showLeftNav
-    HtmlView.showLayers
-    HtmlView.searchList
+    HtmlView.showLeftNav()
+    HtmlView.showLayers()
+    HtmlView.searchList()
   }
 
   @Test def testInitialDOM(): Unit = {
@@ -49,34 +47,35 @@ class DocumentTest {
     assertEquals(1, $("#main").length)
   }
 
-  @Test def testInitialLayer : Unit = {
+  @Test def testInitialLayer(): Unit = {
     resetView(upickle.read[CallGraph](singleNodeGraph))
     assertEquals(1, $("select option:selected").length)
   }
 
-  @Test def svgDisplaySingleNode : Unit = {
+  @Test def svgDisplaySingleNode(): Unit = {
     resetView(upickle.read[CallGraph](singleNodeGraph))
     assertEquals(1, $("svg").find("circle").length)
   }
 
-  @Test def contextMenuHiddenByDefault : Unit = {
+  @Test def contextMenuHiddenByDefault(): Unit = {
     assertFalse($(".context-menu").is(":visible").asInstanceOf[Boolean])
   }
 
-  @Test def clickOnNodeOpenContextMenu : Unit = {
+  @Test def clickOnNodeOpenContextMenu(): Unit = {
     resetView(upickle.read[CallGraph](singleNodeGraph))
-    $("svg").find(".node").each({(li: Html) => {
+    $("svg").find(".node").each({ (li: Html) => {
       $(li).contextmenu()
-    }}: scalajs.js.ThisFunction)
+    }
+    }: scalajs.js.ThisFunction)
     assertTrue($(".context-menu").is(":visible").asInstanceOf[Boolean])
   }
 
-  @Test def errorListShowedWhenErrors : Unit = {
+  @Test def errorListShowedWhenErrors(): Unit = {
     resetView(upickle.read[CallGraph](singleErrorNodeGraph))
     assertFalse($("#errors").is(":empty").asInstanceOf[Boolean])
   }
 
-  @Test def errorListNotShowed : Unit = {
+  @Test def errorListNotShowed(): Unit = {
     resetView(upickle.read[CallGraph](singleNodeGraph))
     assertTrue($("#errors").length.asInstanceOf[Integer] == 0)
   }

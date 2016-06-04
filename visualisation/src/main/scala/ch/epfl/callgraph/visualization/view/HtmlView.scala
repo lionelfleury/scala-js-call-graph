@@ -19,7 +19,7 @@ object HtmlView extends JSApp {
   val errors = div.render
   val layersHTML = div(`class` := "layers").render
 
-  val searchField = div(box, div(" Only exported:", exported), div(" Only reachable:", reachable)).render
+  val searchField = div(box, div(" Only exported:", exported), div(" Only reachable:", reachable))
 
   box.onkeyup = (e: KeyboardEvent) => if (e.keyCode == 13) searchList()
   exported.onclick = (e: MouseEvent) => searchList()
@@ -80,7 +80,7 @@ object HtmlView extends JSApp {
     )
   }
 
-  def showLeftNav = {
+  def showLeftNav(): Unit = {
     val target = sdom.document.getElementById("nav").asInstanceOf[Div]
     target.innerHTML = ""
     target.appendChild(div(searchField, layersHTML, output, errors, ContextMenu.nav).render)

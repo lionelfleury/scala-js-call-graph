@@ -7,6 +7,6 @@ object D3GraphModel {
 
   final case class GraphNode(data: Node) extends forceModule.Node
 
-  final case class GraphLink(source: GraphNode, target: GraphNode) extends Link[GraphNode]
+  final case class GraphLink(source: GraphNode, target: GraphNode, group: String) extends Link[GraphNode]
 
 }
