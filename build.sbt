@@ -57,7 +57,11 @@ lazy val root = (project in file(".")).
   aggregate(utilsJS, utilsJVM, `sbt-scalajs-callgraph`).
   settings(commonSettings: _*).
   settings(publishSettings: _*).
-  settings(aggregate in update := false)
+  settings(
+    aggregate in update := false,
+    publish :=(),
+    publishLocal :=()
+  )
 
 lazy val `sbt-scalajs-callgraph` = (project in file("sbt-plugin")).
   settings(commonSettings: _*).

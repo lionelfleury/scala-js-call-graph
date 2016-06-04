@@ -1,5 +1,9 @@
 language: scala
+
 sudo: false
+
+jdk:
+  - oraclejdk8
 
 cache:
   directories:
@@ -12,4 +16,4 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 
-script: sbt +compile callgraph/test
+script: sbt +publishLocal callgraph/test
