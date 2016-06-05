@@ -1,4 +1,4 @@
-# Call graph visualisation tool for Scala.js
+# Call graph visualisation tool for Scala.js [![Build Status](https://travis-ci.org/lionelfleury/scala-js-call-graph.svg?branch=dev)](https://travis-ci.org/lionelfleury/scala-js-call-graph)
 
 ![alt tag](https://raw.githubusercontent.com/lionelfleury/scala-js-call-graph/release/screenshot.png)
 
